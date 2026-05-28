@@ -1,0 +1,74 @@
+{
+  "language": "German",
+  "flag": "🇩🇪",
+  "categories": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "subcategories": [
+        {
+          "id": "greetings",
+          "name": "Greetings",
+          "words": [
+            { "question": "Guten Tag", "answer": "Goedendag" },
+            { "question": "Danke", "answer": "Dank je" },
+            { "question": "Bitte", "answer": "Alstublieft" },
+            { "question": "Auf Wiedersehen", "answer": "Tot ziens" },
+            { "question": "Ja", "answer": "Ja" },
+            { "question": "Nein", "answer": "Nee" },
+            { "question": "Entschuldigung", "answer": "Excuus" },
+            { "question": "Wie geht es Ihnen", "answer": "Hoe gaat het" }
+          ]
+        },
+        {
+          "id": "numbers",
+          "name": "Numbers",
+          "words": [
+            { "question": "Ein", "answer": "Één" },
+            { "question": "Zwei", "answer": "Twee" },
+            { "question": "Drei", "answer": "Drie" },
+            { "question": "Vier", "answer": "Vier" },
+            { "question": "Fünf", "answer": "Vijf" },
+            { "question": "Sechs", "answer": "Zes" },
+            { "question": "Sieben", "answer": "Zeven" },
+            { "question": "Acht", "answer": "Acht" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "daily_life",
+      "name": "Daily Life",
+      "subcategories": [
+        {
+          "id": "food",
+          "name": "Food",
+          "words": [
+            { "question": "Brot", "answer": "Brood" },
+            { "question": "Wasser", "answer": "Water" },
+            { "question": "Milch", "answer": "Melk" },
+            { "question": "Käse", "answer": "Kaas" },
+            { "question": "Apfel", "answer": "Appel" },
+            { "question": "Fleisch", "answer": "Vlees" },
+            { "question": "Fisch", "answer": "Vis" },
+            { "question": "Gemüse", "answer": "Groente" }
+          ]
+        },
+        {
+          "id": "colors",
+          "name": "Colors",
+          "words": [
+            { "question": "Rot", "answer": "Rood" },
+            { "question": "Blau", "answer": "Blauw" },
+            { "question": "Grün", "answer": "Groen" },
+            { "question": "Gelb", "answer": "Geel" },
+            { "question": "Weiß", "answer": "Wit" },
+            { "question": "Schwarz", "answer": "Zwart" },
+            { "question": "Orange", "answer": "Oranje" },
+            { "question": "Lila", "answer": "Paars" }
+          ]
+        }
+      ]
+    }
+  ]
+}

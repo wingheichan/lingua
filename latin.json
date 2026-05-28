@@ -1,0 +1,74 @@
+{
+  "language": "Latin",
+  "flag": "🏛️",
+  "categories": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "subcategories": [
+        {
+          "id": "greetings",
+          "name": "Greetings",
+          "words": [
+            { "question": "Salve", "answer": "Hallo" },
+            { "question": "Vale", "answer": "Vaarwel" },
+            { "question": "Gratias", "answer": "Dank je" },
+            { "question": "Amicus", "answer": "Vriend" },
+            { "question": "Porta", "answer": "Deur/Poort" },
+            { "question": "Aqua", "answer": "Water" },
+            { "question": "Pater", "answer": "Vader" },
+            { "question": "Mater", "answer": "Moeder" }
+          ]
+        },
+        {
+          "id": "numbers",
+          "name": "Numbers",
+          "words": [
+            { "question": "Unus", "answer": "Één" },
+            { "question": "Duo", "answer": "Twee" },
+            { "question": "Tres", "answer": "Drie" },
+            { "question": "Quattuor", "answer": "Vier" },
+            { "question": "Quinque", "answer": "Vijf" },
+            { "question": "Sex", "answer": "Zes" },
+            { "question": "Septem", "answer": "Zeven" },
+            { "question": "Octo", "answer": "Acht" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nature",
+      "name": "Nature",
+      "subcategories": [
+        {
+          "id": "animals",
+          "name": "Animals",
+          "words": [
+            { "question": "Canis", "answer": "Hond" },
+            { "question": "Feles", "answer": "Kat" },
+            { "question": "Equus", "answer": "Paard" },
+            { "question": "Avis", "answer": "Vogel" },
+            { "question": "Piscis", "answer": "Vis" },
+            { "question": "Leo", "answer": "Leeuw" },
+            { "question": "Lupus", "answer": "Wolf" },
+            { "question": "Ursus", "answer": "Beer" }
+          ]
+        },
+        {
+          "id": "nature_words",
+          "name": "Nature",
+          "words": [
+            { "question": "Sol", "answer": "Zon" },
+            { "question": "Luna", "answer": "Maan" },
+            { "question": "Terra", "answer": "Aarde" },
+            { "question": "Ignis", "answer": "Vuur" },
+            { "question": "Ventus", "answer": "Wind" },
+            { "question": "Arbor", "answer": "Boom" },
+            { "question": "Flos", "answer": "Bloem" },
+            { "question": "Herba", "answer": "Gras" }
+          ]
+        }
+      ]
+    }
+  ]
+}

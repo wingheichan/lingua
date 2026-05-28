@@ -1,0 +1,74 @@
+{
+  "language": "Old Greek",
+  "flag": "🏺",
+  "categories": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "subcategories": [
+        {
+          "id": "greetings",
+          "name": "Greetings",
+          "words": [
+            { "question": "Χαίρε (Chaire)", "answer": "Hallo" },
+            { "question": "Ἀγαθός (Agathos)", "answer": "Goed" },
+            { "question": "Φίλος (Philos)", "answer": "Vriend" },
+            { "question": "Λόγος (Logos)", "answer": "Woord/Rede" },
+            { "question": "Ἀρχή (Arche)", "answer": "Begin" },
+            { "question": "Νίκη (Nike)", "answer": "Overwinning" },
+            { "question": "Δόξα (Doxa)", "answer": "Glorie/Mening" },
+            { "question": "Ψυχή (Psyche)", "answer": "Ziel" }
+          ]
+        },
+        {
+          "id": "numbers",
+          "name": "Numbers",
+          "words": [
+            { "question": "Εἷς (Heis)", "answer": "Één" },
+            { "question": "Δύο (Dyo)", "answer": "Twee" },
+            { "question": "Τρεῖς (Treis)", "answer": "Drie" },
+            { "question": "Τέτταρες (Tettares)", "answer": "Vier" },
+            { "question": "Πέντε (Pente)", "answer": "Vijf" },
+            { "question": "Ἕξ (Hex)", "answer": "Zes" },
+            { "question": "Ἑπτά (Hepta)", "answer": "Zeven" },
+            { "question": "Ὀκτώ (Okto)", "answer": "Acht" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nature",
+      "name": "Nature",
+      "subcategories": [
+        {
+          "id": "elements",
+          "name": "Elements",
+          "words": [
+            { "question": "Ὕδωρ (Hydor)", "answer": "Water" },
+            { "question": "Πῦρ (Pyr)", "answer": "Vuur" },
+            { "question": "Γῆ (Ge)", "answer": "Aarde" },
+            { "question": "Ἀήρ (Aer)", "answer": "Lucht" },
+            { "question": "Ἥλιος (Helios)", "answer": "Zon" },
+            { "question": "Σελήνη (Selene)", "answer": "Maan" },
+            { "question": "Θάλασσα (Thalassa)", "answer": "Zee" },
+            { "question": "Ἄνεμος (Anemos)", "answer": "Wind" }
+          ]
+        },
+        {
+          "id": "animals",
+          "name": "Animals",
+          "words": [
+            { "question": "Κύων (Kyon)", "answer": "Hond" },
+            { "question": "Αἴλουρος (Ailouros)", "answer": "Kat" },
+            { "question": "Ἵππος (Hippos)", "answer": "Paard" },
+            { "question": "Ὄρνις (Ornis)", "answer": "Vogel" },
+            { "question": "Ἰχθύς (Ichthys)", "answer": "Vis" },
+            { "question": "Λέων (Leon)", "answer": "Leeuw" },
+            { "question": "Λύκος (Lykos)", "answer": "Wolf" },
+            { "question": "Ἄρκτος (Arktos)", "answer": "Beer" }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -9,6 +9,30 @@
 <body>
 
 <!-- ============================================================
+     PLAYER NAME MODAL  (replaces browser prompt)
+     ============================================================ -->
+<div id="modal-overlay" class="modal-overlay" style="display:none;">
+  <div class="modal-card" id="modal-name-card">
+    <div class="modal-icon">⚡</div>
+    <h2 class="modal-title" id="modal-title">Welcome to Lingua Quest</h2>
+    <p  class="modal-subtitle" id="modal-subtitle">Enter your name to appear on the leaderboard.</p>
+    <input
+      id="modal-name-input"
+      class="modal-input"
+      type="text"
+      maxlength="24"
+      placeholder="Your name…"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    <div class="modal-btns">
+      <button class="btn-primary"   id="modal-save">Save</button>
+      <button class="btn-secondary" id="modal-cancel" style="display:none;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
      TOP NAVIGATION
      ============================================================ -->
 <nav id="top-nav">
@@ -22,9 +46,7 @@
 
 <main>
 
-  <!-- ==========================================================
-       HOME PAGE
-       ========================================================== -->
+  <!-- HOME PAGE -->
   <div class="page active" id="page-home">
     <div class="hero">
       <h1 class="hero-title">Lingua Quest</h1>
@@ -37,9 +59,7 @@
     <div class="game-grid" id="game-grid"></div>
   </div>
 
-  <!-- ==========================================================
-       CATEGORY / SUBCATEGORY SELECT
-       ========================================================== -->
+  <!-- CATEGORY SELECT -->
   <div class="page" id="page-select">
     <div class="select-header">
       <button class="btn-back" id="btn-back-select">← Back</button>
@@ -54,143 +74,78 @@
       <div class="divider"></div>
       <h3>Select card mode</h3>
       <div class="mode-btns">
-        <button class="mode-btn" data-mode="1">
-          <strong>Mode 1 — Closed</strong>
-          <small>All cards face-down. Flip to reveal.</small>
-        </button>
-        <button class="mode-btn" data-mode="2">
-          <strong>Mode 2 — Peek (10s)</strong>
-          <small>Cards shown for 10 seconds, then hidden.</small>
-        </button>
-        <button class="mode-btn" data-mode="3">
-          <strong>Mode 3 — Open</strong>
-          <small>All cards visible. Just match them.</small>
-        </button>
+        <button class="mode-btn" data-mode="1"><strong>Mode 1 — Closed</strong><small>All cards face-down. Flip to reveal.</small></button>
+        <button class="mode-btn" data-mode="2"><strong>Mode 2 — Peek (10s)</strong><small>Cards shown for 10 seconds, then hidden.</small></button>
+        <button class="mode-btn" data-mode="3"><strong>Mode 3 — Open</strong><small>All cards visible. Just match them.</small></button>
       </div>
     </div>
   </div>
 
-  <!-- ==========================================================
-       FILL-IN-LETTERS GAME
-       ========================================================== -->
+  <!-- FILL-IN-LETTERS -->
   <div class="page" id="page-fill">
     <div id="fill-container">
       <div class="game-hud">
-        <div class="hud-item">
-          <span class="hud-label">Score</span>
-          <span class="hud-value" id="fill-score">0</span>
-        </div>
-        <div class="hud-item">
-          <span class="hud-label">Time Left</span>
-          <span class="hud-value" id="fill-timer">01:00</span>
-        </div>
-        <div class="hud-item">
-          <span class="hud-label">Progress</span>
-          <span class="hud-value" id="fill-progress-text">1 / 20</span>
-        </div>
+        <div class="hud-item"><span class="hud-label">Score</span><span class="hud-value" id="fill-score">0</span></div>
+        <div class="hud-item"><span class="hud-label">Time Left</span><span class="hud-value" id="fill-timer">01:00</span></div>
+        <div class="hud-item"><span class="hud-label">Progress</span><span class="hud-value" id="fill-progress-text">1 / 20</span></div>
         <button class="btn-quit" id="fill-quit">Quit</button>
       </div>
-
-      <div class="fill-progress">
-        <div class="fill-progress-bar" id="fill-progress-bar" style="width:0%"></div>
-      </div>
-
+      <div class="fill-progress"><div class="fill-progress-bar" id="fill-progress-bar" style="width:0%"></div></div>
       <div class="fill-card">
         <div class="fill-hint">Dutch meaning</div>
         <div class="fill-answer-hint" id="fill-hint-answer"></div>
         <div class="fill-word-display" id="fill-word-display"></div>
         <div class="fill-input-row">
-          <input type="text" id="fill-input" maxlength="2"
-            autocomplete="off" autocorrect="off" spellcheck="false" placeholder="?" />
+          <input type="text" id="fill-input" maxlength="2" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="?" />
         </div>
         <div class="fill-feedback" id="fill-feedback"></div>
       </div>
     </div>
   </div>
 
-  <!-- ==========================================================
-       MEMORY CARD GAME
-       ========================================================== -->
+  <!-- MEMORY CARD GAME -->
   <div class="page" id="page-memory">
     <div id="memory-container">
       <div class="game-hud">
-        <div class="hud-item">
-          <span class="hud-label">Score</span>
-          <span class="hud-value" id="memory-score">0</span>
-        </div>
-        <div class="hud-item">
-          <span class="hud-label">Time Left</span>
-          <span class="hud-value" id="memory-timer">01:00</span>
-        </div>
-        <div class="hud-item">
-          <span class="hud-label">Matched</span>
-          <span class="hud-value" id="memory-matched">0 / ?</span>
-        </div>
+        <div class="hud-item"><span class="hud-label">Score</span><span class="hud-value" id="memory-score">0</span></div>
+        <div class="hud-item"><span class="hud-label">Time Left</span><span class="hud-value" id="memory-timer">01:00</span></div>
+        <div class="hud-item"><span class="hud-label">Matched</span><span class="hud-value" id="memory-matched">0 / ?</span></div>
         <button class="btn-quit" id="memory-quit">Quit</button>
       </div>
-
       <div class="mem-countdown" id="memory-countdown"></div>
-
       <div class="memory-area">
-        <div>
-          <div class="memory-col-header">Word</div>
-          <div class="memory-col" id="memory-left"></div>
-        </div>
-        <div>
-          <div class="memory-col-header">Meaning (Dutch)</div>
-          <div class="memory-col" id="memory-right"></div>
-        </div>
+        <div><div class="memory-col-header">Word</div><div class="memory-col" id="memory-left"></div></div>
+        <div><div class="memory-col-header">Meaning (Dutch)</div><div class="memory-col" id="memory-right"></div></div>
       </div>
     </div>
   </div>
 
-  <!-- ==========================================================
-       QUIZ / BATTLE GAME  — single unified scene
-       ========================================================== -->
+  <!-- ============================================================
+       QUEST BATTLE  –  monster LEFT  /  human RIGHT
+       ============================================================ -->
   <div class="page" id="page-quiz">
     <div id="quiz-container">
 
-      <!-- HUD -->
       <div class="game-hud">
-        <div class="hud-item">
-          <span class="hud-label">Score</span>
-          <span class="hud-value" id="quiz-score">0</span>
-        </div>
-        <div class="hud-item">
-          <span class="hud-label">Time Left</span>
-          <span class="hud-value" id="quiz-timer">01:00</span>
-        </div>
-        <div class="hud-item">
-          <span class="hud-label">Lives</span>
-          <span id="quiz-lives" style="display:flex;gap:4px;align-items:center;"></span>
-        </div>
-        <div class="hud-item">
-          <span class="hud-label">Question</span>
-          <span class="hud-value" id="quiz-q-num">1 / ?</span>
-        </div>
+        <div class="hud-item"><span class="hud-label">Score</span><span class="hud-value" id="quiz-score">0</span></div>
+        <div class="hud-item"><span class="hud-label">Time Left</span><span class="hud-value" id="quiz-timer">01:00</span></div>
+        <div class="hud-item"><span class="hud-label">Lives</span><span id="quiz-lives" style="display:flex;gap:4px;align-items:center;"></span></div>
+        <div class="hud-item"><span class="hud-label">Question</span><span class="hud-value" id="quiz-q-num">1 / ?</span></div>
         <button class="btn-quit" id="quiz-quit">Quit</button>
       </div>
 
-      <!-- Battle Scene: full-width SVG with overlaid emoji characters -->
-      <div class="quiz-battle-wrap">
+      <!-- Battle scene wrapper – positions everything relative -->
+      <div class="quiz-battle-wrap" id="quiz-battle-wrap">
 
-        <!-- SVG background scene -->
-        <svg class="quiz-battle-svg" viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg">
+        <!-- SVG background -->
+        <svg class="quiz-battle-svg" viewBox="0 0 800 220" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <radialGradient id="qSky" cx="50%" cy="0%" r="90%">
               <stop offset="0%" stop-color="#2d1b4e"/>
               <stop offset="100%" stop-color="#0d0d1a"/>
             </radialGradient>
-            <radialGradient id="qGlow" cx="50%" cy="100%" r="60%">
-              <stop offset="0%" stop-color="#c9a84c" stop-opacity="0.15"/>
-              <stop offset="100%" stop-color="transparent"/>
-            </radialGradient>
           </defs>
-
-          <!-- Sky -->
-          <rect width="800" height="200" fill="url(#qSky)"/>
-          <rect width="800" height="200" fill="url(#qGlow)"/>
-
+          <rect width="800" height="220" fill="url(#qSky)"/>
           <!-- Stars -->
           <circle cx="40"  cy="20" r="1.2" fill="#fff" opacity="0.8"/>
           <circle cx="120" cy="12" r="1"   fill="#fff" opacity="0.6"/>
@@ -202,64 +157,52 @@
           <circle cx="750" cy="14" r="1"   fill="#fff" opacity="0.9"/>
           <circle cx="80"  cy="40" r="0.8" fill="#fff" opacity="0.5"/>
           <circle cx="380" cy="35" r="0.9" fill="#fff" opacity="0.6"/>
-
           <!-- Ground -->
-          <rect x="0" y="155" width="800" height="45" fill="#12101e"/>
-          <rect x="0" y="153" width="800" height="5"  fill="#1e1a32"/>
+          <rect x="0" y="168" width="800" height="52" fill="#12101e"/>
+          <rect x="0" y="166" width="800" height="5"  fill="#1e1a32"/>
+          <line x1="0" y1="175" x2="800" y2="175" stroke="#1e1a32" stroke-width="1" opacity="0.4"/>
 
-          <!-- ── CAVE (left) ── -->
+          <!-- CAVE — left side -->
           <g id="quiz-cave-group">
-            <!-- Cave mouth -->
-            <ellipse cx="100" cy="155" rx="72" ry="42" fill="#080614"/>
-            <ellipse cx="100" cy="155" rx="58" ry="32" fill="#100a24"/>
-            <!-- Cave rocks -->
-            <ellipse cx="50"  cy="148" rx="20" ry="14" fill="#0d0820"/>
-            <ellipse cx="148" cy="148" rx="18" ry="12" fill="#0d0820"/>
-            <ellipse cx="100" cy="130" rx="14" ry="10" fill="#0d0820"/>
-            <!-- Stalactites -->
-            <polygon points="72,116  78,135  66,135"  fill="#080614"/>
-            <polygon points="95,112  101,132 89,132"  fill="#080614"/>
-            <polygon points="118,116 124,135 112,135" fill="#080614"/>
-            <!-- Glow inside -->
-            <ellipse cx="100" cy="148" rx="30" ry="20" fill="#3d0066" opacity="0.4"/>
-            <!-- Cave label -->
-            <text x="100" y="178" text-anchor="middle" font-size="11" fill="#6a6080" font-family="serif">cave</text>
+            <ellipse cx="105" cy="168" rx="78" ry="46" fill="#080614"/>
+            <ellipse cx="105" cy="168" rx="62" ry="35" fill="#100a24"/>
+            <ellipse cx="55"  cy="160" rx="22" ry="15" fill="#0d0820"/>
+            <ellipse cx="155" cy="160" rx="20" ry="13" fill="#0d0820"/>
+            <ellipse cx="105" cy="138" rx="16" ry="11" fill="#0d0820"/>
+            <polygon points="76,122  83,143  69,143"  fill="#080614"/>
+            <polygon points="100,117 107,140 93,140"  fill="#080614"/>
+            <polygon points="124,122 131,143 117,143" fill="#080614"/>
+            <ellipse cx="105" cy="160" rx="32" ry="22" fill="#3d0066" opacity="0.35"/>
+            <text x="105" y="195" text-anchor="middle" font-size="12" fill="#4a4060" font-family="serif" font-style="italic">cave</text>
           </g>
 
-          <!-- ── HOUSE (right) ── -->
+          <!-- HOUSE — right side -->
           <g id="quiz-house-group">
-            <!-- House body -->
-            <rect x="638" y="100" width="110" height="58" rx="3" fill="#1a3a1a"/>
-            <!-- Roof -->
-            <polygon points="630,100 756,100 693,58" fill="#2a5a2a"/>
-            <!-- Chimney -->
-            <rect x="726" y="60" width="16" height="32" fill="#2a5a2a"/>
-            <!-- Door -->
-            <rect x="676" y="118" width="34" height="40" rx="17" fill="#0d1a0d"/>
-            <!-- Windows -->
-            <rect x="642" y="108" width="22" height="18" rx="3" fill="#c9a84c" opacity="0.5"/>
-            <rect x="728" y="108" width="22" height="18" rx="3" fill="#c9a84c" opacity="0.5"/>
-            <!-- Window shine -->
-            <rect x="643" y="109" width="8"  height="6" rx="1" fill="#fff" opacity="0.15"/>
-            <rect x="729" y="109" width="8"  height="6" rx="1" fill="#fff" opacity="0.15"/>
-            <!-- House label -->
-            <text x="693" y="178" text-anchor="middle" font-size="11" fill="#6a6080" font-family="serif">village</text>
+            <rect  x="630" y="108" width="118" height="62" rx="3" fill="#1a3a1a"/>
+            <polygon points="622,108 756,108 689,62"  fill="#2a5a2a"/>
+            <rect  x="730" y="65"  width="16"  height="35" fill="#2a5a2a"/>
+            <rect  x="672" y="128" width="36"  height="42" rx="18" fill="#0d1a0d"/>
+            <rect  x="634" y="116" width="24"  height="20" rx="3" fill="#c9a84c" opacity="0.55"/>
+            <rect  x="722" y="116" width="24"  height="20" rx="3" fill="#c9a84c" opacity="0.55"/>
+            <rect  x="635" y="117" width="9"   height="7"  rx="1" fill="#fff" opacity="0.18"/>
+            <rect  x="723" y="117" width="9"   height="7"  rx="1" fill="#fff" opacity="0.18"/>
+            <text x="689" y="195" text-anchor="middle" font-size="12" fill="#4a6040" font-family="serif" font-style="italic">village</text>
           </g>
-
-          <!-- Ground dirt texture lines -->
-          <line x1="0"   y1="162" x2="800" y2="162" stroke="#1e1a32" stroke-width="1" opacity="0.5"/>
-          <line x1="150" y1="168" x2="650" y2="168" stroke="#1e1a32" stroke-width="1" opacity="0.3"/>
         </svg>
 
-        <!-- Emoji characters overlaid on scene -->
+        <!-- Explosion canvas sits on top of SVG, same size -->
+        <canvas id="quiz-explosion-canvas" class="quiz-explosion-canvas"></canvas>
+
+        <!-- Characters: monster LEFT, human RIGHT -->
         <div class="quiz-chars">
-          <span class="quiz-char quiz-monster-char" id="quiz-monster">👾</span>
-          <span class="quiz-char quiz-human-char"   id="quiz-human">🧙</span>
+          <!-- Monster near cave on left -->
+          <span class="quiz-char" id="quiz-monster" style="left:11%;">👾</span>
+          <!-- Human near house on right -->
+          <span class="quiz-char" id="quiz-human"   style="right:11%;">🧙</span>
         </div>
 
       </div><!-- end quiz-battle-wrap -->
 
-      <!-- Question + Choices -->
       <div class="quiz-question-area">
         <div class="quiz-question-card">
           <div class="quiz-q-label">Translate this word</div>
@@ -273,33 +216,23 @@
         </div>
       </div>
 
-    </div><!-- end quiz-container -->
+    </div>
   </div>
 
-  <!-- ==========================================================
-       HIGH SCORES PAGE
-       ========================================================== -->
+  <!-- HIGH SCORES -->
   <div class="page" id="page-scores">
     <div class="scores-header">
       <h1 class="hero-title" style="font-size:2rem;">High Scores</h1>
       <p class="hero-subtitle">Top performances across all languages &amp; games</p>
       <div class="divider"></div>
     </div>
-
     <div class="scores-tabs" id="score-tabs"></div>
-
     <div class="scores-table-wrap">
       <table class="scores-table">
         <thead>
           <tr>
-            <th>#</th>
-            <th>Player</th>
-            <th>Score</th>
-            <th>Game</th>
-            <th>Language</th>
-            <th>Topic</th>
-            <th>Time</th>
-            <th>Date</th>
+            <th>#</th><th>Player</th><th>Score</th><th>Game</th>
+            <th>Language</th><th>Topic</th><th>Time</th><th>Date</th>
           </tr>
         </thead>
         <tbody id="scores-tbody">
@@ -307,7 +240,6 @@
         </tbody>
       </table>
     </div>
-
     <button class="btn-clear-scores" id="btn-clear-scores">Clear All Scores</button>
   </div>
 
@@ -321,8 +253,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     App.init();
     document.getElementById('btn-home-nav2').addEventListener('click', () => {
-      if (App.state.gameActive) App.quitGame();
-      else App.showPage('home');
+      if (App.state.gameActive) App.quitGame(); else App.showPage('home');
     });
   });
 </script>

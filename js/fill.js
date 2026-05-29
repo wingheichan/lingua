@@ -86,12 +86,13 @@ const FillGame = (() => {
     }
     missingIndex = candidates[Math.floor(Math.random() * candidates.length)];
 
-    renderWordDisplay(false);
-
-    d.input.value = '';
+    d.input.value = '';          // clear BEFORE rendering so the blank box shows '_'
     d.feedback.textContent = '';
     d.feedback.className = 'fill-feedback';
     d.score.textContent = score;
+
+    renderWordDisplay(false);
+
     d.input.focus();
   }
 

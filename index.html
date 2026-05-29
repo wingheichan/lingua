@@ -14,8 +14,9 @@
 <nav id="top-nav">
   <span class="nav-logo" id="btn-home-nav">⚡ Lingua Quest</span>
   <div class="nav-links">
-    <button class="nav-btn" data-page="home"   id="btn-home-nav2"  onclick="if(App.state.gameActive)App.quitGame();else App.showPage&&App.showPage('home')">Home</button>
-    <button class="nav-btn" data-page="scores" id="btn-scores-nav">High Scores</button>
+    <button class="nav-btn" id="btn-home-nav2">Home</button>
+    <button class="nav-btn" id="btn-scores-nav">High Scores</button>
+    <button class="nav-btn nav-player" id="nav-player-name" title="Click to change name">👤 …</button>
   </div>
 </nav>
 
@@ -30,10 +31,8 @@
       <p class="hero-subtitle">Learn ancient &amp; modern languages through play</p>
       <div class="divider"></div>
     </div>
-
     <p class="section-title">① Choose your language</p>
     <div class="language-grid" id="lang-grid"></div>
-
     <p class="section-title">② Pick a game</p>
     <div class="game-grid" id="game-grid"></div>
   </div>
@@ -48,11 +47,9 @@
         <span id="select-lang-name"></span> &mdash; <span id="select-game-name"></span>
       </div>
     </div>
-
     <p class="section-title">Choose a category &amp; topic</p>
     <div class="cat-list" id="cat-list"></div>
 
-    <!-- Memory-only: mode selector -->
     <div id="memory-mode-select" style="display:none;">
       <div class="divider"></div>
       <h3>Select card mode</h3>
@@ -78,51 +75,36 @@
        ========================================================== -->
   <div class="page" id="page-fill">
     <div id="fill-container">
-
-      <!-- HUD -->
       <div class="game-hud">
         <div class="hud-item">
           <span class="hud-label">Score</span>
           <span class="hud-value" id="fill-score">0</span>
         </div>
         <div class="hud-item">
-          <span class="hud-label">Time</span>
-          <span class="hud-value" id="fill-timer">00:00</span>
+          <span class="hud-label">Time Left</span>
+          <span class="hud-value" id="fill-timer">01:00</span>
         </div>
         <div class="hud-item">
           <span class="hud-label">Progress</span>
-          <span class="hud-value" id="fill-progress-text">1 / ?</span>
+          <span class="hud-value" id="fill-progress-text">1 / 20</span>
         </div>
         <button class="btn-quit" id="fill-quit">Quit</button>
       </div>
 
-      <!-- Progress bar -->
       <div class="fill-progress">
         <div class="fill-progress-bar" id="fill-progress-bar" style="width:0%"></div>
       </div>
 
-      <!-- Card -->
       <div class="fill-card">
         <div class="fill-hint">Dutch meaning</div>
         <div class="fill-answer-hint" id="fill-hint-answer"></div>
-
         <div class="fill-word-display" id="fill-word-display"></div>
-
         <div class="fill-input-row">
-          <input
-            type="text"
-            id="fill-input"
-            maxlength="2"
-            autocomplete="off"
-            autocorrect="off"
-            spellcheck="false"
-            placeholder="?"
-          />
+          <input type="text" id="fill-input" maxlength="2"
+            autocomplete="off" autocorrect="off" spellcheck="false" placeholder="?" />
         </div>
-
         <div class="fill-feedback" id="fill-feedback"></div>
       </div>
-
     </div>
   </div>
 
@@ -131,16 +113,14 @@
        ========================================================== -->
   <div class="page" id="page-memory">
     <div id="memory-container">
-
-      <!-- HUD -->
       <div class="game-hud">
         <div class="hud-item">
           <span class="hud-label">Score</span>
           <span class="hud-value" id="memory-score">0</span>
         </div>
         <div class="hud-item">
-          <span class="hud-label">Time</span>
-          <span class="hud-value" id="memory-timer">00:00</span>
+          <span class="hud-label">Time Left</span>
+          <span class="hud-value" id="memory-timer">01:00</span>
         </div>
         <div class="hud-item">
           <span class="hud-label">Matched</span>
@@ -149,10 +129,8 @@
         <button class="btn-quit" id="memory-quit">Quit</button>
       </div>
 
-      <!-- Countdown overlay for mode 2 -->
       <div class="mem-countdown" id="memory-countdown"></div>
 
-      <!-- Board -->
       <div class="memory-area">
         <div>
           <div class="memory-col-header">Word</div>
@@ -163,12 +141,11 @@
           <div class="memory-col" id="memory-right"></div>
         </div>
       </div>
-
     </div>
   </div>
 
   <!-- ==========================================================
-       QUIZ / BATTLE GAME
+       QUIZ / BATTLE GAME  — single unified scene
        ========================================================== -->
   <div class="page" id="page-quiz">
     <div id="quiz-container">
@@ -180,12 +157,12 @@
           <span class="hud-value" id="quiz-score">0</span>
         </div>
         <div class="hud-item">
-          <span class="hud-label">Time</span>
-          <span class="hud-value" id="quiz-timer">00:00</span>
+          <span class="hud-label">Time Left</span>
+          <span class="hud-value" id="quiz-timer">01:00</span>
         </div>
         <div class="hud-item">
           <span class="hud-label">Lives</span>
-          <span id="quiz-lives" style="display:flex;gap:4px;"></span>
+          <span id="quiz-lives" style="display:flex;gap:4px;align-items:center;"></span>
         </div>
         <div class="hud-item">
           <span class="hud-label">Question</span>
@@ -194,108 +171,107 @@
         <button class="btn-quit" id="quiz-quit">Quit</button>
       </div>
 
-      <!-- Scene -->
-      <div class="quiz-scene">
+      <!-- Battle Scene: full-width SVG with overlaid emoji characters -->
+      <div class="quiz-battle-wrap">
 
-        <!-- Left: Cave + Monster -->
-        <div class="quiz-side">
-          <svg class="quiz-svg-scene" viewBox="0 0 180 160" xmlns="http://www.w3.org/2000/svg" id="quiz-cave-svg">
-            <!-- Night sky -->
-            <rect width="180" height="160" fill="url(#skyGrad)"/>
-            <defs>
-              <radialGradient id="skyGrad" cx="50%" cy="0%" r="80%">
-                <stop offset="0%" stop-color="#2d1b4e"/>
-                <stop offset="100%" stop-color="#0d0d1a"/>
-              </radialGradient>
-            </defs>
-            <!-- Stars -->
-            <circle cx="20" cy="15" r="1" fill="#fff" opacity="0.7"/>
-            <circle cx="50" cy="8"  r="1.2" fill="#fff" opacity="0.9"/>
-            <circle cx="90" cy="20" r="0.8" fill="#fff" opacity="0.6"/>
-            <circle cx="130" cy="12" r="1" fill="#fff" opacity="0.8"/>
-            <circle cx="160" cy="25" r="0.9" fill="#fff" opacity="0.5"/>
-            <circle cx="35" cy="35" r="0.7" fill="#fff" opacity="0.6"/>
-            <!-- Ground -->
-            <rect x="0" y="120" width="180" height="40" fill="#1a1028"/>
-            <rect x="0" y="118" width="180" height="6" fill="#2a1840"/>
-            <!-- Cave -->
-            <ellipse cx="40" cy="120" rx="38" ry="28" fill="#0d0820" id="quiz-cave"/>
-            <ellipse cx="40" cy="120" rx="30" ry="22" fill="#160c30"/>
-            <text x="40" y="128" text-anchor="middle" font-size="22" id="quiz-cave-emoji">🕳️</text>
+        <!-- SVG background scene -->
+        <svg class="quiz-battle-svg" viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="qSky" cx="50%" cy="0%" r="90%">
+              <stop offset="0%" stop-color="#2d1b4e"/>
+              <stop offset="100%" stop-color="#0d0d1a"/>
+            </radialGradient>
+            <radialGradient id="qGlow" cx="50%" cy="100%" r="60%">
+              <stop offset="0%" stop-color="#c9a84c" stop-opacity="0.15"/>
+              <stop offset="100%" stop-color="transparent"/>
+            </radialGradient>
+          </defs>
+
+          <!-- Sky -->
+          <rect width="800" height="200" fill="url(#qSky)"/>
+          <rect width="800" height="200" fill="url(#qGlow)"/>
+
+          <!-- Stars -->
+          <circle cx="40"  cy="20" r="1.2" fill="#fff" opacity="0.8"/>
+          <circle cx="120" cy="12" r="1"   fill="#fff" opacity="0.6"/>
+          <circle cx="200" cy="25" r="1.4" fill="#fff" opacity="0.9"/>
+          <circle cx="320" cy="10" r="1"   fill="#fff" opacity="0.7"/>
+          <circle cx="440" cy="18" r="1.2" fill="#fff" opacity="0.5"/>
+          <circle cx="560" cy="8"  r="1"   fill="#fff" opacity="0.8"/>
+          <circle cx="650" cy="22" r="1.3" fill="#fff" opacity="0.6"/>
+          <circle cx="750" cy="14" r="1"   fill="#fff" opacity="0.9"/>
+          <circle cx="80"  cy="40" r="0.8" fill="#fff" opacity="0.5"/>
+          <circle cx="380" cy="35" r="0.9" fill="#fff" opacity="0.6"/>
+
+          <!-- Ground -->
+          <rect x="0" y="155" width="800" height="45" fill="#12101e"/>
+          <rect x="0" y="153" width="800" height="5"  fill="#1e1a32"/>
+
+          <!-- ── CAVE (left) ── -->
+          <g id="quiz-cave-group">
+            <!-- Cave mouth -->
+            <ellipse cx="100" cy="155" rx="72" ry="42" fill="#080614"/>
+            <ellipse cx="100" cy="155" rx="58" ry="32" fill="#100a24"/>
+            <!-- Cave rocks -->
+            <ellipse cx="50"  cy="148" rx="20" ry="14" fill="#0d0820"/>
+            <ellipse cx="148" cy="148" rx="18" ry="12" fill="#0d0820"/>
+            <ellipse cx="100" cy="130" rx="14" ry="10" fill="#0d0820"/>
             <!-- Stalactites -->
-            <polygon points="20,96 26,108 14,108" fill="#0d0820"/>
-            <polygon points="38,93 43,107 33,107" fill="#0d0820"/>
-            <polygon points="55,96 60,108 50,108" fill="#0d0820"/>
-          </svg>
+            <polygon points="72,116  78,135  66,135"  fill="#080614"/>
+            <polygon points="95,112  101,132 89,132"  fill="#080614"/>
+            <polygon points="118,116 124,135 112,135" fill="#080614"/>
+            <!-- Glow inside -->
+            <ellipse cx="100" cy="148" rx="30" ry="20" fill="#3d0066" opacity="0.4"/>
+            <!-- Cave label -->
+            <text x="100" y="178" text-anchor="middle" font-size="11" fill="#6a6080" font-family="serif">cave</text>
+          </g>
 
-          <!-- Monster character -->
-          <div style="position:relative;width:100%;text-align:center;margin-top:-30px;">
-            <span id="quiz-monster" style="font-size:2.8rem;display:inline-block;cursor:default;">👾</span>
-          </div>
-        </div>
-
-        <!-- Middle: Question + Choices -->
-        <div class="quiz-main">
-          <div class="quiz-question-card">
-            <div class="quiz-q-label">Translate this word</div>
-            <div class="quiz-q-text" id="quiz-q-text">…</div>
-          </div>
-          <div class="quiz-choices">
-            <button class="quiz-choice" data-answer="" data-correct="false">
-              <span class="choice-key">A</span><span></span>
-            </button>
-            <button class="quiz-choice" data-answer="" data-correct="false">
-              <span class="choice-key">B</span><span></span>
-            </button>
-            <button class="quiz-choice" data-answer="" data-correct="false">
-              <span class="choice-key">C</span><span></span>
-            </button>
-            <button class="quiz-choice" data-answer="" data-correct="false">
-              <span class="choice-key">D</span><span></span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Right: House + Human -->
-        <div class="quiz-side">
-          <svg class="quiz-svg-scene" viewBox="0 0 180 160" xmlns="http://www.w3.org/2000/svg">
-            <!-- Night sky -->
-            <rect width="180" height="160" fill="url(#skyGrad2)"/>
-            <defs>
-              <radialGradient id="skyGrad2" cx="50%" cy="0%" r="80%">
-                <stop offset="0%" stop-color="#1a2848"/>
-                <stop offset="100%" stop-color="#0d0d1a"/>
-              </radialGradient>
-            </defs>
-            <!-- Stars -->
-            <circle cx="15" cy="18" r="1" fill="#fff" opacity="0.6"/>
-            <circle cx="55" cy="10" r="1.1" fill="#fff" opacity="0.8"/>
-            <circle cx="100" cy="22" r="0.9" fill="#fff" opacity="0.7"/>
-            <circle cx="145" cy="14" r="1" fill="#fff" opacity="0.5"/>
-            <circle cx="165" cy="30" r="0.8" fill="#fff" opacity="0.9"/>
-            <!-- Ground -->
-            <rect x="0" y="120" width="180" height="40" fill="#0e1a10"/>
-            <rect x="0" y="118" width="180" height="6" fill="#152018"/>
-            <!-- House -->
-            <rect x="90" y="85" width="65" height="40" fill="#1e3a1e" id="quiz-house"/>
-            <polygon points="90,85 157,85 123,55" fill="#2a5a2a"/>
-            <!-- Door -->
-            <rect x="112" y="100" width="22" height="25" rx="11" fill="#0d1a0d"/>
-            <!-- Windows -->
-            <rect x="94" y="90" width="14" height="12" rx="2" fill="#c9a84c" opacity="0.6"/>
-            <rect x="142" y="90" width="14" height="12" rx="2" fill="#c9a84c" opacity="0.6"/>
+          <!-- ── HOUSE (right) ── -->
+          <g id="quiz-house-group">
+            <!-- House body -->
+            <rect x="638" y="100" width="110" height="58" rx="3" fill="#1a3a1a"/>
+            <!-- Roof -->
+            <polygon points="630,100 756,100 693,58" fill="#2a5a2a"/>
             <!-- Chimney -->
-            <rect x="145" y="52" width="10" height="20" fill="#2a5a2a"/>
-            <text x="150" y="52" text-anchor="middle" font-size="10">🌫️</text>
-          </svg>
+            <rect x="726" y="60" width="16" height="32" fill="#2a5a2a"/>
+            <!-- Door -->
+            <rect x="676" y="118" width="34" height="40" rx="17" fill="#0d1a0d"/>
+            <!-- Windows -->
+            <rect x="642" y="108" width="22" height="18" rx="3" fill="#c9a84c" opacity="0.5"/>
+            <rect x="728" y="108" width="22" height="18" rx="3" fill="#c9a84c" opacity="0.5"/>
+            <!-- Window shine -->
+            <rect x="643" y="109" width="8"  height="6" rx="1" fill="#fff" opacity="0.15"/>
+            <rect x="729" y="109" width="8"  height="6" rx="1" fill="#fff" opacity="0.15"/>
+            <!-- House label -->
+            <text x="693" y="178" text-anchor="middle" font-size="11" fill="#6a6080" font-family="serif">village</text>
+          </g>
 
-          <!-- Human character -->
-          <div style="position:relative;width:100%;text-align:center;margin-top:-30px;">
-            <span id="quiz-human" style="font-size:2.8rem;display:inline-block;cursor:default;">🧙</span>
-          </div>
+          <!-- Ground dirt texture lines -->
+          <line x1="0"   y1="162" x2="800" y2="162" stroke="#1e1a32" stroke-width="1" opacity="0.5"/>
+          <line x1="150" y1="168" x2="650" y2="168" stroke="#1e1a32" stroke-width="1" opacity="0.3"/>
+        </svg>
+
+        <!-- Emoji characters overlaid on scene -->
+        <div class="quiz-chars">
+          <span class="quiz-char quiz-monster-char" id="quiz-monster">👾</span>
+          <span class="quiz-char quiz-human-char"   id="quiz-human">🧙</span>
         </div>
 
-      </div><!-- end quiz-scene -->
+      </div><!-- end quiz-battle-wrap -->
+
+      <!-- Question + Choices -->
+      <div class="quiz-question-area">
+        <div class="quiz-question-card">
+          <div class="quiz-q-label">Translate this word</div>
+          <div class="quiz-q-text" id="quiz-q-text">…</div>
+        </div>
+        <div class="quiz-choices">
+          <button class="quiz-choice"><span class="choice-key">A</span></button>
+          <button class="quiz-choice"><span class="choice-key">B</span></button>
+          <button class="quiz-choice"><span class="choice-key">C</span></button>
+          <button class="quiz-choice"><span class="choice-key">D</span></button>
+        </div>
+      </div>
 
     </div><!-- end quiz-container -->
   </div>
@@ -317,6 +293,7 @@
         <thead>
           <tr>
             <th>#</th>
+            <th>Player</th>
             <th>Score</th>
             <th>Game</th>
             <th>Language</th>
@@ -326,7 +303,7 @@
           </tr>
         </thead>
         <tbody id="scores-tbody">
-          <tr><td colspan="7"><div class="no-scores">No scores yet. Play a game first!</div></td></tr>
+          <tr><td colspan="8"><div class="no-scores">No scores yet. Play a game first!</div></td></tr>
         </tbody>
       </table>
     </div>
@@ -336,7 +313,6 @@
 
 </main>
 
-<!-- Scripts -->
 <script src="js/app.js"></script>
 <script src="js/fill.js"></script>
 <script src="js/memory.js"></script>
@@ -344,14 +320,11 @@
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     App.init();
-
-    // Home nav button also works via the logo click (wired in App.init)
     document.getElementById('btn-home-nav2').addEventListener('click', () => {
       if (App.state.gameActive) App.quitGame();
-      else { App.renderHome(); App.showPage('home'); }
+      else App.showPage('home');
     });
   });
 </script>
-
 </body>
 </html>

@@ -839,3 +839,91 @@ main { padding-top: 64px; min-height: 100vh; }
   .memory-area { grid-template-columns: 1fr; }
   .nav-logo { font-size: 0.85rem; }
 }
+
+/* ============================================================
+   NAV PLAYER NAME
+   ============================================================ */
+.nav-player {
+  color: var(--accent-light) !important;
+  border-color: rgba(232,208,138,0.3) !important;
+  cursor: pointer;
+  font-size: 0.9rem !important;
+  padding: 0.4rem 0.9rem !important;
+  transition: var(--transition);
+}
+.nav-player:hover {
+  background: rgba(232,208,138,0.12) !important;
+  border-color: var(--accent-light) !important;
+}
+
+/* ============================================================
+   UNIFIED QUIZ BATTLE SCENE
+   ============================================================ */
+.quiz-battle-wrap {
+  position: relative;
+  width: 100%;
+  margin-bottom: 1.25rem;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.quiz-battle-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 120px;
+}
+
+/* Emoji characters sit on top of the SVG */
+.quiz-chars {
+  position: absolute;
+  bottom: 22px;
+  left: 0; right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 11% 0 10%;
+  pointer-events: none;
+}
+
+.quiz-char {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  display: inline-block;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+  will-change: transform;
+}
+
+.quiz-monster-char {
+  animation: bobMonster 1.8s ease-in-out infinite;
+}
+.quiz-human-char {
+  animation: bobHuman 2s ease-in-out infinite;
+}
+
+@keyframes bobMonster {
+  0%,100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-7px) rotate(-4deg); }
+}
+@keyframes bobHuman {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+
+/* Question area below scene */
+.quiz-question-area {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.quiz-question-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem 2rem;
+}
+
+@media (max-width: 600px) {
+  .quiz-chars { padding: 0 8% 0 7%; bottom: 14px; }
+  .quiz-choices { grid-template-columns: 1fr; }
+}

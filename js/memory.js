@@ -1,52 +1,55 @@
 // ============================================================
 //  LINGUA QUEST - Memory Card Game
+//  - 60-second countdown timer
+//  - +5 bonus per second remaining on finish
 // ============================================================
 
 const MemoryGame = (() => {
 
-  let words = [];
-  let selectedLeft  = null;  // { el, index }
-  let selectedRight = null;
-  let matchedCount  = 0;
-  let score = 0;
-  let mistakes = 0;
-  let timerInterval = null;
-  let elapsedSeconds = 0;
-  let active = false;
-  let locked = false;  // block clicks during feedback
-  let mode = 1;        // 1=all closed, 2=open 10s then close, 3=always open
+  const MAX_SECONDS       = 60;
+  const PTS_MATCH         = 20;
+  const PTS_MISTAKE       = -5;
+  const PTS_BONUS_PER_SEC = 5;
 
-  // ── DOM refs ───────────────────────────────────────────────
+  let words        = [];
+  let selectedLeft = null;
+  let selectedRight= null;
+  let matchedCount = 0;
+  let score        = 0;
+  let mistakes     = 0;
+  let secondsLeft  = MAX_SECONDS;
+  let timerInterval= null;
+  let active       = false;
+  let locked       = false;
+  let mode         = 1;
+
   const $ = id => document.getElementById(id);
 
   // ── Start ──────────────────────────────────────────────────
   function start() {
-    mode = App.state.memoryMode || 1;
-    const sub = App.state.selectedSubcategory;
-    words = shuffle([...sub.words]);
+    mode         = App.state.memoryMode || 1;
+    const sub    = App.state.selectedSubcategory;
+    words        = shuffle([...sub.words]);
     matchedCount = 0;
-    score = 0;
-    mistakes = 0;
-    elapsedSeconds = 0;
-    active = true;
-    locked = false;
+    score        = 0;
+    mistakes     = 0;
+    secondsLeft  = MAX_SECONDS;
+    active       = true;
+    locked       = false;
 
     $('memory-quit').onclick = () => App.quitGame();
     buildBoard();
 
     if (mode === 2) {
-      // Show all for 10 seconds then flip
       locked = true;
       revealAll();
-      let countdown = 10;
-      $('memory-countdown').textContent = '⏳ Memorise! ' + countdown + 's';
-      const cd = setInterval(() => {
-        countdown--;
-        $('memory-countdown').textContent = countdown > 0
-          ? '⏳ Memorise! ' + countdown + 's'
-          : 'Go!';
-        if (countdown <= 0) {
-          clearInterval(cd);
+      let cd = 10;
+      $('memory-countdown').textContent = '⏳ Memorise! ' + cd + 's';
+      const interval = setInterval(() => {
+        cd--;
+        $('memory-countdown').textContent = cd > 0 ? '⏳ Memorise! ' + cd + 's' : 'Go!';
+        if (cd <= 0) {
+          clearInterval(interval);
           hideAll();
           locked = false;
           $('memory-countdown').textContent = '';
@@ -69,28 +72,21 @@ const MemoryGame = (() => {
     rightCol.innerHTML = '';
     $('memory-countdown').textContent = '';
 
-    // Shuffle display order of each side independently
     const leftOrder  = shuffle(words.map((_, i) => i));
     const rightOrder = shuffle(words.map((_, i) => i));
 
-    leftOrder.forEach(idx => {
-      const card = makeCard(words[idx].question, idx, 'left');
-      leftCol.appendChild(card);
-    });
-    rightOrder.forEach(idx => {
-      const card = makeCard(words[idx].answer, idx, 'right');
-      rightCol.appendChild(card);
-    });
+    leftOrder.forEach(idx => leftCol.appendChild(makeCard(words[idx].question, idx, 'left')));
+    rightOrder.forEach(idx => rightCol.appendChild(makeCard(words[idx].answer, idx, 'right')));
+    updateHUD();
   }
 
   function makeCard(text, index, side) {
     const div = document.createElement('div');
-    div.className = 'mem-card' + (mode === 1 ? ' face-down' : '');
+    div.className   = 'mem-card' + (mode === 1 ? ' face-down' : '');
     div.dataset.index = index;
     div.dataset.side  = side;
     div.dataset.text  = text;
-    div.textContent = (mode === 1) ? '' : text;
-
+    div.textContent = mode === 1 ? '' : text;
     div.addEventListener('click', () => onCardClick(div));
     return div;
   }
@@ -101,28 +97,18 @@ const MemoryGame = (() => {
     if (card.classList.contains('matched')) return;
     const side = card.dataset.side;
 
-    // Reveal if face-down
     if (card.classList.contains('face-down')) {
       card.classList.remove('face-down');
       card.textContent = card.dataset.text;
     }
 
     if (side === 'left') {
-      if (selectedLeft?.el === card) {
-        // Deselect
-        card.classList.remove('selected');
-        selectedLeft = null;
-        return;
-      }
+      if (selectedLeft?.el === card) { card.classList.remove('selected'); selectedLeft = null; return; }
       if (selectedLeft) selectedLeft.el.classList.remove('selected');
       selectedLeft = { el: card, index: parseInt(card.dataset.index) };
       card.classList.add('selected');
     } else {
-      if (selectedRight?.el === card) {
-        card.classList.remove('selected');
-        selectedRight = null;
-        return;
-      }
+      if (selectedRight?.el === card) { card.classList.remove('selected'); selectedRight = null; return; }
       if (selectedRight) selectedRight.el.classList.remove('selected');
       selectedRight = { el: card, index: parseInt(card.dataset.index) };
       card.classList.add('selected');
@@ -134,40 +120,28 @@ const MemoryGame = (() => {
   // ── Check match ────────────────────────────────────────────
   function checkMatch() {
     locked = true;
-    const lIdx = selectedLeft.index;
-    const rIdx = selectedRight.index;
-
-    if (lIdx === rIdx) {
-      // Match!
-      score += 20;
+    if (selectedLeft.index === selectedRight.index) {
+      score += PTS_MATCH;
       matchedCount++;
       selectedLeft.el.classList.remove('selected');
       selectedRight.el.classList.remove('selected');
       selectedLeft.el.classList.add('matched');
       selectedRight.el.classList.add('matched');
-      selectedLeft  = null;
-      selectedRight = null;
+      selectedLeft = selectedRight = null;
       updateHUD();
       locked = false;
-
-      if (matchedCount === words.length) finishGame();
+      if (matchedCount === words.length) finishGame(true);
     } else {
-      // No match
       mistakes++;
-      score = Math.max(0, score - 5);
+      score = Math.max(0, score + PTS_MISTAKE);
       selectedLeft.el.classList.add('error');
       selectedRight.el.classList.add('error');
-
       setTimeout(() => {
         [selectedLeft.el, selectedRight.el].forEach(el => {
           el.classList.remove('selected', 'error');
-          if (mode === 1) {
-            el.classList.add('face-down');
-            el.textContent = '';
-          }
+          if (mode === 1) { el.classList.add('face-down'); el.textContent = ''; }
         });
-        selectedLeft  = null;
-        selectedRight = null;
+        selectedLeft = selectedRight = null;
         updateHUD();
         locked = false;
       }, 800);
@@ -176,7 +150,7 @@ const MemoryGame = (() => {
 
   // ── HUD ────────────────────────────────────────────────────
   function updateHUD() {
-    $('memory-score').textContent = score;
+    $('memory-score').textContent   = score;
     $('memory-matched').textContent = matchedCount + ' / ' + words.length;
   }
 
@@ -185,17 +159,25 @@ const MemoryGame = (() => {
     clearInterval(timerInterval);
     timerInterval = setInterval(() => {
       if (!active) return;
-      elapsedSeconds++;
-      $('memory-timer').textContent = App.formatTime(elapsedSeconds);
+      secondsLeft--;
+      const el = $('memory-timer');
+      if (el) {
+        el.textContent = App.formatTime(secondsLeft);
+        el.style.color = secondsLeft <= 10 ? 'var(--accent-red2)' : 'var(--accent-gold)';
+      }
+      if (secondsLeft <= 0) { secondsLeft = 0; timeUp(); }
     }, 1000);
   }
 
-  function stopTimer() {
-    clearInterval(timerInterval);
-    timerInterval = null;
+  function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
+
+  function timeUp() {
+    active = false;
+    stopTimer();
+    setTimeout(() => finishGame(false), 400);
   }
 
-  // ── Reveal/Hide all ────────────────────────────────────────
+  // ── Reveal / Hide ──────────────────────────────────────────
   function revealAll() {
     document.querySelectorAll('.mem-card').forEach(c => {
       c.classList.remove('face-down');
@@ -211,37 +193,42 @@ const MemoryGame = (() => {
   }
 
   // ── Finish ─────────────────────────────────────────────────
-  function finishGame() {
+  function finishGame(completed) {
     active = false;
     stopTimer();
+    const bonusPoints = completed ? secondsLeft * 5 : 0;
+    const finalScore  = score + bonusPoints;
+    const elapsed     = MAX_SECONDS - secondsLeft;
 
     App.Scores.add({
-      game: 'memory',
-      language: App.state.selectedLanguage.label,
-      category: App.state.selectedCategory.name,
+      player:      App.state.playerName || 'Player',
+      game:        'memory',
+      language:    App.state.selectedLanguage.label,
+      category:    App.state.selectedCategory.name,
       subcategory: App.state.selectedSubcategory.name,
-      score,
-      time: elapsedSeconds,
-      date: new Date().toLocaleDateString('nl-NL'),
+      score:       finalScore,
+      time:        elapsed,
+      date:        new Date().toLocaleDateString('nl-NL'),
     });
 
-    showResult();
+    showResult(completed, finalScore, bonusPoints, elapsed);
   }
 
-  function showResult() {
+  function showResult(completed, finalScore, bonusPoints, elapsed) {
     const modeNames = { 1: 'Closed', 2: 'Peek (10s)', 3: 'Open' };
     document.getElementById('memory-container').innerHTML = `
       <div class="result-screen">
-        <div class="result-icon">🃏</div>
-        <div class="result-title">All Matched!</div>
-        <div class="result-subtitle">Mode: ${modeNames[mode]} — ${words.length} pairs found.</div>
+        <div class="result-icon">${completed ? '🃏' : '⏰'}</div>
+        <div class="result-title">${completed ? 'All Matched!' : 'Time Up!'}</div>
+        <div class="result-subtitle">Mode: ${modeNames[mode]} — ${matchedCount} of ${words.length} pairs matched.${completed ? ' Bonus: +' + bonusPoints + ' pts' : ''}</div>
         <div class="result-stats">
-          <div class="result-stat"><div class="result-stat-value">${score}</div><div class="result-stat-label">Score</div></div>
-          <div class="result-stat"><div class="result-stat-value">${App.formatTime(elapsedSeconds)}</div><div class="result-stat-label">Time</div></div>
+          <div class="result-stat"><div class="result-stat-value">${finalScore}</div><div class="result-stat-label">Final Score</div></div>
+          <div class="result-stat"><div class="result-stat-value">${App.formatTime(elapsed)}</div><div class="result-stat-label">Time Used</div></div>
           <div class="result-stat"><div class="result-stat-value">${mistakes}</div><div class="result-stat-label">Mistakes</div></div>
+          ${completed ? `<div class="result-stat"><div class="result-stat-value">+${bonusPoints}</div><div class="result-stat-label">Time Bonus</div></div>` : ''}
         </div>
         <div class="result-btns">
-          <button class="btn-primary" id="mem-play-again">Play Again</button>
+          <button class="btn-primary"   id="mem-play-again">Play Again</button>
           <button class="btn-secondary" id="mem-home">Home</button>
         </div>
       </div>
@@ -252,18 +239,17 @@ const MemoryGame = (() => {
 
   // ── Reset ──────────────────────────────────────────────────
   function reset() {
-    active = false;
-    locked = false;
+    active = locked = false;
     stopTimer();
     words = [];
     selectedLeft = selectedRight = null;
-    matchedCount = score = mistakes = elapsedSeconds = 0;
+    matchedCount = score = mistakes = 0;
+    secondsLeft = MAX_SECONDS;
 
     const c = document.getElementById('memory-container');
     if (c && !$('memory-left')) c.innerHTML = memoryOriginalHTML;
   }
 
-  // ── Utility ────────────────────────────────────────────────
   function shuffle(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));

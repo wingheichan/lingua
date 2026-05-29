@@ -1,25 +1,22 @@
 // ============================================================
 //  LINGUA QUEST - App Core
-//  Handles: navigation, data loading, player name, high scores
 // ============================================================
 
 const App = (() => {
 
-  const MAX_SECONDS = 60;   // 1-minute time limit for all games
+  const MAX_SECONDS = 60;
 
-  // ── State ──────────────────────────────────────────────────
   const state = {
     currentPage: 'home',
     selectedLanguage: null,
     selectedCategory: null,
     selectedSubcategory: null,
-    selectedGame: null,       // 'fill' | 'memory' | 'quiz'
+    selectedGame: null,
     memoryMode: null,
     gameActive: false,
     playerName: '',
   };
 
-  // ── Language registry ──────────────────────────────────────
   const LANGUAGES = [
     { key: 'latin',  file: 'json/latin.json',  label: 'Latin',    flag: '🏛️', desc: 'Classical Roman tongue' },
     { key: 'greek',  file: 'json/greek.json',  label: 'Old Greek', flag: '🏺', desc: 'Ancient Hellenic speech' },
@@ -28,56 +25,72 @@ const App = (() => {
   ];
 
   const GAMES = [
-    { key: 'fill',   icon: '✍️',  name: 'Fill in Letters', desc: 'One letter removed – can you complete 20 words in 60 seconds?' },
-    { key: 'memory', icon: '🃏',  name: 'Memory Cards',    desc: 'Match words to their meanings. Three modes, 60 seconds on the clock.' },
-    { key: 'quiz',   icon: '⚔️',  name: 'Quest Battle',    desc: 'Answer questions to fight monsters. 3 wrong answers and the humans fall.' },
+    { key: 'fill',   icon: '✍️',  name: 'Fill in Letters', desc: 'One letter removed – complete 20 words in 60 seconds.' },
+    { key: 'memory', icon: '🃏',  name: 'Memory Cards',    desc: 'Match words to meanings. Three modes, 60 seconds.' },
+    { key: 'quiz',   icon: '⚔️',  name: 'Quest Battle',    desc: 'Answer to fight monsters. 3 wrong answers and the village falls.' },
   ];
 
   const dataCache = {};
 
-  // ── Player name ────────────────────────────────────────────
+  // ── Player name modal ──────────────────────────────────────
   const Player = {
     STORAGE_KEY: 'linguaquest_player',
-    load() {
-      return localStorage.getItem(this.STORAGE_KEY) || '';
-    },
-    save(name) {
-      localStorage.setItem(this.STORAGE_KEY, name);
-    }
+    load()       { return localStorage.getItem(this.STORAGE_KEY) || ''; },
+    save(name)   { localStorage.setItem(this.STORAGE_KEY, name); },
   };
-
-  function loadPlayerName() {
-    state.playerName = Player.load();
-  }
 
   function updateNavPlayerName() {
     const el = document.getElementById('nav-player-name');
     if (!el) return;
-    if (state.playerName) {
-      el.textContent = '👤 ' + state.playerName;
-      el.title = 'Click to change name';
-    } else {
-      el.textContent = '👤 Set name';
-      el.title = 'Click to set your name';
-    }
+    el.textContent = state.playerName ? '👤 ' + state.playerName : '👤 Set name';
   }
 
-  function promptPlayerName(isFirstTime) {
-    const current = state.playerName;
-    const msg = isFirstTime
-      ? 'Welcome! Enter your name to track your scores:'
-      : 'Change your name:';
-    const input = prompt(msg, current);
-    if (input === null) return; // cancelled
-    const name = input.trim().slice(0, 24);
-    if (!name && !current) {
-      // First time, force a name
-      state.playerName = 'Player';
-    } else if (name) {
-      state.playerName = name;
-    }
-    Player.save(state.playerName);
-    updateNavPlayerName();
+  // Show the styled modal; returns a Promise that resolves when saved/cancelled
+  function showNameModal(isFirstTime) {
+    return new Promise(resolve => {
+      const overlay  = document.getElementById('modal-overlay');
+      const title    = document.getElementById('modal-title');
+      const subtitle = document.getElementById('modal-subtitle');
+      const input    = document.getElementById('modal-name-input');
+      const saveBtn  = document.getElementById('modal-save');
+      const cancelBtn= document.getElementById('modal-cancel');
+
+      title.textContent    = isFirstTime ? 'Welcome to Lingua Quest' : 'Change Your Name';
+      subtitle.textContent = isFirstTime
+        ? 'Enter your name to appear on the leaderboard.'
+        : 'Update your display name below.';
+      input.value          = state.playerName || '';
+      cancelBtn.style.display = isFirstTime ? 'none' : '';
+
+      overlay.style.display = 'flex';
+      setTimeout(() => overlay.classList.add('visible'), 10);
+      input.focus();
+      input.select();
+
+      function close(saved) {
+        overlay.classList.remove('visible');
+        setTimeout(() => { overlay.style.display = 'none'; }, 300);
+        saveBtn.onclick   = null;
+        cancelBtn.onclick = null;
+        input.onkeydown   = null;
+        resolve(saved);
+      }
+
+      saveBtn.onclick = () => {
+        const name = input.value.trim().slice(0, 24) || (isFirstTime ? 'Player' : state.playerName || 'Player');
+        state.playerName = name;
+        Player.save(name);
+        updateNavPlayerName();
+        close(true);
+      };
+
+      cancelBtn.onclick = () => close(false);
+
+      input.onkeydown = e => {
+        if (e.key === 'Enter') saveBtn.click();
+        if (e.key === 'Escape' && !isFirstTime) cancelBtn.click();
+      };
+    });
   }
 
   // ── High Scores ────────────────────────────────────────────
@@ -87,18 +100,14 @@ const App = (() => {
       try { return JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '[]'); }
       catch { return []; }
     },
-    save(scores) {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(scores));
-    },
+    save(scores) { localStorage.setItem(this.STORAGE_KEY, JSON.stringify(scores)); },
     add(entry) {
       const scores = this.load();
       scores.push(entry);
       scores.sort((a, b) => b.score - a.score);
       this.save(scores.slice(0, 200));
     },
-    clear() {
-      localStorage.removeItem(this.STORAGE_KEY);
-    }
+    clear() { localStorage.removeItem(this.STORAGE_KEY); },
   };
 
   // ── Data loader ────────────────────────────────────────────
@@ -116,12 +125,11 @@ const App = (() => {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const page = document.getElementById('page-' + id);
     if (page) { page.classList.add('active'); state.currentPage = id; }
-    document.querySelectorAll('.nav-btn[data-page]').forEach(b => {
-      b.classList.toggle('active', b.dataset.page === id);
-    });
+    document.querySelectorAll('.nav-btn[data-page]').forEach(b =>
+      b.classList.toggle('active', b.dataset.page === id));
   }
 
-  // ── Home Page ──────────────────────────────────────────────
+  // ── Home ───────────────────────────────────────────────────
   function renderHome() {
     const langGrid = document.getElementById('lang-grid');
     langGrid.innerHTML = '';
@@ -153,12 +161,12 @@ const App = (() => {
     cardEl.classList.add('selected');
     state.selectedLanguage = lang;
     try { lang.data = await loadLanguageData(lang); }
-    catch { alert('Could not load language data. Make sure the JSON files are uploaded.'); }
+    catch { alert('Could not load language data. Check the JSON files are uploaded.'); }
   }
 
   // ── Game flow ──────────────────────────────────────────────
   async function startGameFlow(gameKey) {
-    if (!state.playerName) { promptPlayerName(true); }
+    if (!state.playerName) await showNameModal(true);
     if (!state.selectedLanguage) { alert('Please select a language first!'); return; }
     if (!state.selectedLanguage.data) {
       try { state.selectedLanguage.data = await loadLanguageData(state.selectedLanguage); }
@@ -194,12 +202,12 @@ const App = (() => {
       catList.appendChild(sec);
     });
 
-    const memorySection = document.getElementById('memory-mode-select');
-    memorySection.style.display = state.selectedGame === 'memory' ? 'block' : 'none';
+    const memSec = document.getElementById('memory-mode-select');
+    memSec.style.display = state.selectedGame === 'memory' ? 'block' : 'none';
   }
 
   function chooseSubcategory(cat, sub) {
-    state.selectedCategory = cat;
+    state.selectedCategory    = cat;
     state.selectedSubcategory = sub;
     if (state.selectedGame === 'memory') {
       document.getElementById('memory-mode-select').scrollIntoView({ behavior: 'smooth' });
@@ -215,7 +223,6 @@ const App = (() => {
     if (state.selectedGame === 'quiz')   { QuizGame.start();   showPage('quiz'); }
   }
 
-  // ── Quit ───────────────────────────────────────────────────
   function quitGame() {
     FillGame.reset();
     MemoryGame.reset();
@@ -226,8 +233,8 @@ const App = (() => {
 
   // ── Scores page ────────────────────────────────────────────
   function renderScores(filterGame) {
-    const all = Scores.load();
-    const games = ['fill', 'memory', 'quiz'];
+    const all    = Scores.load();
+    const games  = ['fill', 'memory', 'quiz'];
     const labels = { fill: 'Fill in Letters', memory: 'Memory Cards', quiz: 'Quest Battle' };
 
     const tabsEl = document.getElementById('score-tabs');
@@ -241,8 +248,8 @@ const App = (() => {
     });
 
     const filtered = filterGame === 'all' ? all : all.filter(s => s.game === filterGame);
-    const tbody = document.getElementById('scores-tbody');
-    if (filtered.length === 0) {
+    const tbody    = document.getElementById('scores-tbody');
+    if (!filtered.length) {
       tbody.innerHTML = '<tr><td colspan="8"><div class="no-scores">No scores yet. Play a game first!</div></td></tr>';
       return;
     }
@@ -256,8 +263,7 @@ const App = (() => {
         <td>${s.subcategory}</td>
         <td>${formatTime(s.time)}</td>
         <td>${s.date}</td>
-      </tr>
-    `).join('');
+      </tr>`).join('');
   }
 
   function formatTime(secs) {
@@ -268,31 +274,22 @@ const App = (() => {
 
   // ── Init ───────────────────────────────────────────────────
   function init() {
-    loadPlayerName();
-
-    // Ask name on first visit
-    if (!state.playerName) promptPlayerName(true);
+    state.playerName = Player.load();
     updateNavPlayerName();
 
-    // Nav: logo / home
+    if (!state.playerName) showNameModal(true);
+
     document.getElementById('btn-home-nav').addEventListener('click', () => {
       if (state.gameActive) quitGame(); else showPage('home');
     });
-
-    // Nav: scores
     document.getElementById('btn-scores-nav').addEventListener('click', () => {
       renderScores('all'); showPage('scores');
     });
-
-    // Nav: player name click to change
     document.getElementById('nav-player-name').addEventListener('click', () => {
-      promptPlayerName(false);
+      showNameModal(false);
     });
-
-    // Select page back
     document.getElementById('btn-back-select').addEventListener('click', () => showPage('home'));
 
-    // Memory mode buttons
     document.querySelectorAll('.mode-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         state.memoryMode = parseInt(btn.dataset.mode);
@@ -301,7 +298,6 @@ const App = (() => {
       });
     });
 
-    // Clear scores
     document.getElementById('btn-clear-scores').addEventListener('click', () => {
       if (confirm('Clear all high scores?')) { Scores.clear(); renderScores('all'); }
     });
@@ -310,5 +306,5 @@ const App = (() => {
     showPage('home');
   }
 
-  return { init, state, Scores, Player, MAX_SECONDS, quitGame, renderHome, renderScores, formatTime, launchGame, showPage, updateNavPlayerName };
+  return { init, state, Scores, MAX_SECONDS, quitGame, renderHome, renderScores, formatTime, launchGame, showPage };
 })();

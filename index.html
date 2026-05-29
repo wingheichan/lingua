@@ -137,56 +137,105 @@
       <!-- Battle scene wrapper – positions everything relative -->
       <div class="quiz-battle-wrap" id="quiz-battle-wrap">
 
-        <!-- SVG background -->
-        <svg class="quiz-battle-svg" viewBox="0 0 800 220" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <radialGradient id="qSky" cx="50%" cy="0%" r="90%">
-              <stop offset="0%" stop-color="#2d1b4e"/>
-              <stop offset="100%" stop-color="#0d0d1a"/>
-            </radialGradient>
-          </defs>
-          <rect width="800" height="220" fill="url(#qSky)"/>
-          <!-- Stars -->
-          <circle cx="40"  cy="20" r="1.2" fill="#fff" opacity="0.8"/>
-          <circle cx="120" cy="12" r="1"   fill="#fff" opacity="0.6"/>
-          <circle cx="200" cy="25" r="1.4" fill="#fff" opacity="0.9"/>
-          <circle cx="320" cy="10" r="1"   fill="#fff" opacity="0.7"/>
-          <circle cx="440" cy="18" r="1.2" fill="#fff" opacity="0.5"/>
-          <circle cx="560" cy="8"  r="1"   fill="#fff" opacity="0.8"/>
-          <circle cx="650" cy="22" r="1.3" fill="#fff" opacity="0.6"/>
-          <circle cx="750" cy="14" r="1"   fill="#fff" opacity="0.9"/>
-          <circle cx="80"  cy="40" r="0.8" fill="#fff" opacity="0.5"/>
-          <circle cx="380" cy="35" r="0.9" fill="#fff" opacity="0.6"/>
-          <!-- Ground -->
-          <rect x="0" y="168" width="800" height="52" fill="#12101e"/>
-          <rect x="0" y="166" width="800" height="5"  fill="#1e1a32"/>
-          <line x1="0" y1="175" x2="800" y2="175" stroke="#1e1a32" stroke-width="1" opacity="0.4"/>
+        <!-- SVG background — Minecraft pixel art style -->
+        <svg class="quiz-battle-svg" viewBox="0 0 800 220" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <!-- Sky — day blue -->
+          <rect width="800" height="220" fill="#7EC8FF"/>
+          <!-- Clouds (pixel blocks) -->
+          <rect x="60"  y="18" width="16" height="16" fill="#fff" opacity="0.95"/>
+          <rect x="76"  y="10" width="32" height="16" fill="#fff" opacity="0.95"/>
+          <rect x="108" y="18" width="16" height="16" fill="#fff" opacity="0.95"/>
+          <rect x="300" y="14" width="16" height="16" fill="#fff" opacity="0.9"/>
+          <rect x="316" y="6"  width="48" height="16" fill="#fff" opacity="0.9"/>
+          <rect x="364" y="14" width="16" height="16" fill="#fff" opacity="0.9"/>
+          <rect x="580" y="20" width="16" height="16" fill="#fff" opacity="0.85"/>
+          <rect x="596" y="12" width="32" height="16" fill="#fff" opacity="0.85"/>
+          <rect x="628" y="20" width="16" height="16" fill="#fff" opacity="0.85"/>
+          <!-- Sun (pixel) -->
+          <rect x="720" y="10" width="32" height="32" fill="#FFD700"/>
+          <rect x="716" y="14" width="4"  height="4"  fill="#FFD700"/>
+          <rect x="752" y="14" width="4"  height="4"  fill="#FFD700"/>
+          <rect x="736" y="6"  width="4"  height="4"  fill="#FFD700"/>
 
-          <!-- CAVE — left side -->
+          <!-- Ground: grass top then dirt -->
+          <rect x="0" y="168" width="800" height="8"  fill="#7EC850"/>  <!-- grass top -->
+          <rect x="0" y="176" width="800" height="8"  fill="#5D9E2F"/>  <!-- grass mid -->
+          <rect x="0" y="184" width="800" height="36" fill="#8B6340"/>  <!-- dirt -->
+          <!-- dirt pixel texture -->
+          <rect x="32"  y="190" width="8" height="8" fill="#6B4F20" opacity="0.5"/>
+          <rect x="112" y="196" width="8" height="8" fill="#6B4F20" opacity="0.5"/>
+          <rect x="200" y="192" width="8" height="8" fill="#6B4F20" opacity="0.5"/>
+          <rect x="320" y="198" width="8" height="8" fill="#6B4F20" opacity="0.5"/>
+          <rect x="450" y="190" width="8" height="8" fill="#6B4F20" opacity="0.5"/>
+          <rect x="560" y="196" width="8" height="8" fill="#6B4F20" opacity="0.5"/>
+          <rect x="660" y="192" width="8" height="8" fill="#6B4F20" opacity="0.5"/>
+          <rect x="740" y="200" width="8" height="8" fill="#6B4F20" opacity="0.5"/>
+
+          <!-- CAVE — Minecraft stone arch, left side -->
           <g id="quiz-cave-group">
-            <ellipse cx="105" cy="168" rx="78" ry="46" fill="#080614"/>
-            <ellipse cx="105" cy="168" rx="62" ry="35" fill="#100a24"/>
-            <ellipse cx="55"  cy="160" rx="22" ry="15" fill="#0d0820"/>
-            <ellipse cx="155" cy="160" rx="20" ry="13" fill="#0d0820"/>
-            <ellipse cx="105" cy="138" rx="16" ry="11" fill="#0d0820"/>
-            <polygon points="76,122  83,143  69,143"  fill="#080614"/>
-            <polygon points="100,117 107,140 93,140"  fill="#080614"/>
-            <polygon points="124,122 131,143 117,143" fill="#080614"/>
-            <ellipse cx="105" cy="160" rx="32" ry="22" fill="#3d0066" opacity="0.35"/>
-            <text x="105" y="195" text-anchor="middle" font-size="12" fill="#4a4060" font-family="serif" font-style="italic">cave</text>
+            <!-- stone blocks forming cave mouth -->
+            <rect x="16"  y="120" width="16" height="16" fill="#7A7A7A"/>
+            <rect x="32"  y="112" width="16" height="16" fill="#7A7A7A"/>
+            <rect x="48"  y="104" width="16" height="16" fill="#555"/>
+            <rect x="64"  y="96"  width="16" height="16" fill="#7A7A7A"/>
+            <rect x="80"  y="96"  width="16" height="16" fill="#555"/>
+            <rect x="96"  y="96"  width="16" height="16" fill="#7A7A7A"/>
+            <rect x="112" y="96"  width="16" height="16" fill="#555"/>
+            <rect x="128" y="96"  width="16" height="16" fill="#7A7A7A"/>
+            <rect x="144" y="104" width="16" height="16" fill="#555"/>
+            <rect x="160" y="112" width="16" height="16" fill="#7A7A7A"/>
+            <rect x="176" y="120" width="16" height="16" fill="#555"/>
+            <!-- left pillar -->
+            <rect x="16"  y="136" width="16" height="16" fill="#555"/>
+            <rect x="16"  y="152" width="16" height="16" fill="#7A7A7A"/>
+            <!-- right pillar -->
+            <rect x="176" y="136" width="16" height="16" fill="#7A7A7A"/>
+            <rect x="176" y="152" width="16" height="16" fill="#555"/>
+            <!-- dark inside -->
+            <rect x="32" y="112" width="144" height="56" fill="#111" opacity="0.85"/>
+            <!-- lava glow inside -->
+            <rect x="64"  y="144" width="16" height="16" fill="#FF6600" opacity="0.7"/>
+            <rect x="80"  y="152" width="32" height="8"  fill="#FF4400" opacity="0.6"/>
+            <rect x="112" y="144" width="16" height="16" fill="#FF6600" opacity="0.7"/>
+            <!-- label -->
+            <text x="96" y="215" text-anchor="middle" font-size="11" fill="#6B4F20" font-family="monospace" font-weight="bold">CAVE</text>
           </g>
 
-          <!-- HOUSE — right side -->
+          <!-- HOUSE — Minecraft wood/planks house, right side -->
           <g id="quiz-house-group">
-            <rect  x="630" y="108" width="118" height="62" rx="3" fill="#1a3a1a"/>
-            <polygon points="622,108 756,108 689,62"  fill="#2a5a2a"/>
-            <rect  x="730" y="65"  width="16"  height="35" fill="#2a5a2a"/>
-            <rect  x="672" y="128" width="36"  height="42" rx="18" fill="#0d1a0d"/>
-            <rect  x="634" y="116" width="24"  height="20" rx="3" fill="#c9a84c" opacity="0.55"/>
-            <rect  x="722" y="116" width="24"  height="20" rx="3" fill="#c9a84c" opacity="0.55"/>
-            <rect  x="635" y="117" width="9"   height="7"  rx="1" fill="#fff" opacity="0.18"/>
-            <rect  x="723" y="117" width="9"   height="7"  rx="1" fill="#fff" opacity="0.18"/>
-            <text x="689" y="195" text-anchor="middle" font-size="12" fill="#4a6040" font-family="serif" font-style="italic">village</text>
+            <!-- oak plank walls -->
+            <rect x="612" y="112" width="144" height="56" fill="#9C7A3C"/>
+            <!-- plank horizontal lines texture -->
+            <rect x="612" y="120" width="144" height="4" fill="#6B4F20" opacity="0.4"/>
+            <rect x="612" y="136" width="144" height="4" fill="#6B4F20" opacity="0.4"/>
+            <rect x="612" y="152" width="144" height="4" fill="#6B4F20" opacity="0.4"/>
+            <!-- roof (spruce planks) -->
+            <rect x="596" y="96"  width="176" height="20" fill="#5C3D1E"/>
+            <rect x="612" y="80"  width="144" height="20" fill="#6B4F20"/>
+            <rect x="628" y="64"  width="112" height="20" fill="#5C3D1E"/>
+            <rect x="652" y="48"  width="64"  height="20" fill="#6B4F20"/>
+            <!-- chimney -->
+            <rect x="716" y="32"  width="24" height="32" fill="#555"/>
+            <rect x="712" y="28"  width="32" height="8"  fill="#7A7A7A"/>
+            <!-- smoke puff -->
+            <rect x="720" y="12"  width="8" height="8"   fill="#C6C6C6" opacity="0.7"/>
+            <rect x="716" y="4"   width="16" height="8"  fill="#C6C6C6" opacity="0.5"/>
+            <!-- door (dark oak) -->
+            <rect x="668" y="136" width="32" height="32" fill="#3D2200"/>
+            <rect x="672" y="140" width="12" height="24" fill="#2A1800"/>
+            <rect x="684" y="140" width="12" height="24" fill="#2A1800"/>
+            <!-- door knob -->
+            <rect x="680" y="152" width="4"  height="4"  fill="#FFD700"/>
+            <!-- windows -->
+            <rect x="620" y="120" width="24" height="20" fill="#5DE5E5" opacity="0.8"/>
+            <rect x="724" y="120" width="24" height="20" fill="#5DE5E5" opacity="0.8"/>
+            <!-- window cross -->
+            <rect x="620" y="130" width="24" height="2" fill="#fff" opacity="0.4"/>
+            <rect x="632" y="120" width="2"  height="20" fill="#fff" opacity="0.4"/>
+            <rect x="724" y="130" width="24" height="2" fill="#fff" opacity="0.4"/>
+            <rect x="736" y="120" width="2"  height="20" fill="#fff" opacity="0.4"/>
+            <!-- label -->
+            <text x="684" y="215" text-anchor="middle" font-size="11" fill="#3D2200" font-family="monospace" font-weight="bold">VILLAGE</text>
           </g>
         </svg>
 

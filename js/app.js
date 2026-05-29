@@ -1,36 +1,84 @@
 // ============================================================
 //  LINGUA QUEST - App Core
-//  Handles: navigation, data loading, global state, high scores
+//  Handles: navigation, data loading, player name, high scores
 // ============================================================
 
 const App = (() => {
 
+  const MAX_SECONDS = 60;   // 1-minute time limit for all games
+
   // ── State ──────────────────────────────────────────────────
   const state = {
     currentPage: 'home',
-    selectedLanguage: null,   // { key, data }
+    selectedLanguage: null,
     selectedCategory: null,
     selectedSubcategory: null,
     selectedGame: null,       // 'fill' | 'memory' | 'quiz'
-    memoryMode: null,         // 1 | 2 | 3
+    memoryMode: null,
     gameActive: false,
+    playerName: '',
   };
 
   // ── Language registry ──────────────────────────────────────
   const LANGUAGES = [
-    { key: 'latin',  file: 'json/latin.json',  label: 'Latin',     flag: '🏛️', desc: 'Classical Roman tongue' },
-    { key: 'greek',  file: 'json/greek.json',  label: 'Old Greek',  flag: '🏺', desc: 'Ancient Hellenic speech' },
-    { key: 'french', file: 'json/french.json', label: 'French',     flag: '🇫🇷', desc: 'La langue de Molière' },
-    { key: 'german', file: 'json/german.json', label: 'German',     flag: '🇩🇪', desc: 'Die Sprache Goethes' },
+    { key: 'latin',  file: 'json/latin.json',  label: 'Latin',    flag: '🏛️', desc: 'Classical Roman tongue' },
+    { key: 'greek',  file: 'json/greek.json',  label: 'Old Greek', flag: '🏺', desc: 'Ancient Hellenic speech' },
+    { key: 'french', file: 'json/french.json', label: 'French',    flag: '🇫🇷', desc: 'La langue de Molière' },
+    { key: 'german', file: 'json/german.json', label: 'German',    flag: '🇩🇪', desc: 'Die Sprache Goethes' },
   ];
 
   const GAMES = [
-    { key: 'fill',   icon: '✍️',  name: 'Fill in Letters', desc: 'One letter removed – can you complete the word? Hints guide you along.' },
-    { key: 'memory', icon: '🃏',  name: 'Memory Cards',    desc: 'Match words to their meanings. Three modes from easy to challenge.' },
+    { key: 'fill',   icon: '✍️',  name: 'Fill in Letters', desc: 'One letter removed – can you complete 20 words in 60 seconds?' },
+    { key: 'memory', icon: '🃏',  name: 'Memory Cards',    desc: 'Match words to their meanings. Three modes, 60 seconds on the clock.' },
     { key: 'quiz',   icon: '⚔️',  name: 'Quest Battle',    desc: 'Answer questions to fight monsters. 3 wrong answers and the humans fall.' },
   ];
 
   const dataCache = {};
+
+  // ── Player name ────────────────────────────────────────────
+  const Player = {
+    STORAGE_KEY: 'linguaquest_player',
+    load() {
+      return localStorage.getItem(this.STORAGE_KEY) || '';
+    },
+    save(name) {
+      localStorage.setItem(this.STORAGE_KEY, name);
+    }
+  };
+
+  function loadPlayerName() {
+    state.playerName = Player.load();
+  }
+
+  function updateNavPlayerName() {
+    const el = document.getElementById('nav-player-name');
+    if (!el) return;
+    if (state.playerName) {
+      el.textContent = '👤 ' + state.playerName;
+      el.title = 'Click to change name';
+    } else {
+      el.textContent = '👤 Set name';
+      el.title = 'Click to set your name';
+    }
+  }
+
+  function promptPlayerName(isFirstTime) {
+    const current = state.playerName;
+    const msg = isFirstTime
+      ? 'Welcome! Enter your name to track your scores:'
+      : 'Change your name:';
+    const input = prompt(msg, current);
+    if (input === null) return; // cancelled
+    const name = input.trim().slice(0, 24);
+    if (!name && !current) {
+      // First time, force a name
+      state.playerName = 'Player';
+    } else if (name) {
+      state.playerName = name;
+    }
+    Player.save(state.playerName);
+    updateNavPlayerName();
+  }
 
   // ── High Scores ────────────────────────────────────────────
   const Scores = {
@@ -43,11 +91,10 @@ const App = (() => {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(scores));
     },
     add(entry) {
-      // entry: { game, language, category, subcategory, score, time, date }
       const scores = this.load();
       scores.push(entry);
       scores.sort((a, b) => b.score - a.score);
-      this.save(scores.slice(0, 200)); // keep top 200 total
+      this.save(scores.slice(0, 200));
     },
     clear() {
       localStorage.removeItem(this.STORAGE_KEY);
@@ -68,10 +115,7 @@ const App = (() => {
   function showPage(id) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const page = document.getElementById('page-' + id);
-    if (page) {
-      page.classList.add('active');
-      state.currentPage = id;
-    }
+    if (page) { page.classList.add('active'); state.currentPage = id; }
     document.querySelectorAll('.nav-btn[data-page]').forEach(b => {
       b.classList.toggle('active', b.dataset.page === id);
     });
@@ -79,32 +123,26 @@ const App = (() => {
 
   // ── Home Page ──────────────────────────────────────────────
   function renderHome() {
-    // Language grid
     const langGrid = document.getElementById('lang-grid');
     langGrid.innerHTML = '';
     LANGUAGES.forEach(lang => {
       const card = document.createElement('div');
       card.className = 'lang-card' + (state.selectedLanguage?.key === lang.key ? ' selected' : '');
-      card.innerHTML = `
-        <div class="lang-flag">${lang.flag}</div>
+      card.innerHTML = `<div class="lang-flag">${lang.flag}</div>
         <div class="lang-name">${lang.label}</div>
-        <div class="lang-desc">${lang.desc}</div>
-      `;
+        <div class="lang-desc">${lang.desc}</div>`;
       card.addEventListener('click', () => selectLanguage(lang, card));
       langGrid.appendChild(card);
     });
 
-    // Game grid
     const gameGrid = document.getElementById('game-grid');
     gameGrid.innerHTML = '';
     GAMES.forEach(game => {
       const card = document.createElement('div');
       card.className = 'game-card';
-      card.innerHTML = `
-        <div class="game-icon">${game.icon}</div>
+      card.innerHTML = `<div class="game-icon">${game.icon}</div>
         <div class="game-name">${game.name}</div>
-        <div class="game-desc">${game.desc}</div>
-      `;
+        <div class="game-desc">${game.desc}</div>`;
       card.addEventListener('click', () => startGameFlow(game.key));
       gameGrid.appendChild(card);
     });
@@ -114,19 +152,14 @@ const App = (() => {
     document.querySelectorAll('.lang-card').forEach(c => c.classList.remove('selected'));
     cardEl.classList.add('selected');
     state.selectedLanguage = lang;
-    try {
-      lang.data = await loadLanguageData(lang);
-    } catch (e) {
-      alert('Could not load language data. Make sure the JSON files are uploaded.');
-    }
+    try { lang.data = await loadLanguageData(lang); }
+    catch { alert('Could not load language data. Make sure the JSON files are uploaded.'); }
   }
 
   // ── Game flow ──────────────────────────────────────────────
   async function startGameFlow(gameKey) {
-    if (!state.selectedLanguage) {
-      alert('Please select a language first!');
-      return;
-    }
+    if (!state.playerName) { promptPlayerName(true); }
+    if (!state.selectedLanguage) { alert('Please select a language first!'); return; }
     if (!state.selectedLanguage.data) {
       try { state.selectedLanguage.data = await loadLanguageData(state.selectedLanguage); }
       catch { alert('Could not load language data.'); return; }
@@ -144,7 +177,6 @@ const App = (() => {
 
     const catList = document.getElementById('cat-list');
     catList.innerHTML = '';
-
     lang.data.categories.forEach(cat => {
       const sec = document.createElement('div');
       sec.className = 'cat-section';
@@ -162,7 +194,6 @@ const App = (() => {
       catList.appendChild(sec);
     });
 
-    // Memory mode selector
     const memorySection = document.getElementById('memory-mode-select');
     memorySection.style.display = state.selectedGame === 'memory' ? 'block' : 'none';
   }
@@ -170,9 +201,7 @@ const App = (() => {
   function chooseSubcategory(cat, sub) {
     state.selectedCategory = cat;
     state.selectedSubcategory = sub;
-
     if (state.selectedGame === 'memory') {
-      // Show mode selector
       document.getElementById('memory-mode-select').scrollIntoView({ behavior: 'smooth' });
     } else {
       launchGame();
@@ -181,12 +210,12 @@ const App = (() => {
 
   function launchGame() {
     state.gameActive = true;
-    if (state.selectedGame === 'fill')   { FillGame.start(); showPage('fill'); }
+    if (state.selectedGame === 'fill')   { FillGame.start();   showPage('fill'); }
     if (state.selectedGame === 'memory') { MemoryGame.start(); showPage('memory'); }
-    if (state.selectedGame === 'quiz')   { QuizGame.start(); showPage('quiz'); }
+    if (state.selectedGame === 'quiz')   { QuizGame.start();   showPage('quiz'); }
   }
 
-  // ── Quit / Home navigation ─────────────────────────────────
+  // ── Quit ───────────────────────────────────────────────────
   function quitGame() {
     FillGame.reset();
     MemoryGame.reset();
@@ -201,7 +230,6 @@ const App = (() => {
     const games = ['fill', 'memory', 'quiz'];
     const labels = { fill: 'Fill in Letters', memory: 'Memory Cards', quiz: 'Quest Battle' };
 
-    // Tabs
     const tabsEl = document.getElementById('score-tabs');
     tabsEl.innerHTML = '';
     ['all', ...games].forEach(g => {
@@ -213,15 +241,15 @@ const App = (() => {
     });
 
     const filtered = filterGame === 'all' ? all : all.filter(s => s.game === filterGame);
-
     const tbody = document.getElementById('scores-tbody');
     if (filtered.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7"><div class="no-scores">No scores yet. Play a game first!</div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8"><div class="no-scores">No scores yet. Play a game first!</div></td></tr>';
       return;
     }
     tbody.innerHTML = filtered.slice(0, 50).map((s, i) => `
       <tr class="${i < 3 ? 'rank-'+(i+1) : ''}">
         <td>${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i+1}</td>
+        <td style="color:var(--accent-light);font-weight:600">${s.player || '—'}</td>
         <td class="score-val">${s.score}</td>
         <td>${labels[s.game] || s.game}</td>
         <td>${s.language}</td>
@@ -240,17 +268,28 @@ const App = (() => {
 
   // ── Init ───────────────────────────────────────────────────
   function init() {
-    // Nav
+    loadPlayerName();
+
+    // Ask name on first visit
+    if (!state.playerName) promptPlayerName(true);
+    updateNavPlayerName();
+
+    // Nav: logo / home
     document.getElementById('btn-home-nav').addEventListener('click', () => {
-      if (state.gameActive) quitGame();
-      else showPage('home');
-    });
-    document.getElementById('btn-scores-nav').addEventListener('click', () => {
-      renderScores('all');
-      showPage('scores');
+      if (state.gameActive) quitGame(); else showPage('home');
     });
 
-    // Select page back button
+    // Nav: scores
+    document.getElementById('btn-scores-nav').addEventListener('click', () => {
+      renderScores('all'); showPage('scores');
+    });
+
+    // Nav: player name click to change
+    document.getElementById('nav-player-name').addEventListener('click', () => {
+      promptPlayerName(false);
+    });
+
+    // Select page back
     document.getElementById('btn-back-select').addEventListener('click', () => showPage('home'));
 
     // Memory mode buttons
@@ -264,15 +303,12 @@ const App = (() => {
 
     // Clear scores
     document.getElementById('btn-clear-scores').addEventListener('click', () => {
-      if (confirm('Clear all high scores?')) {
-        Scores.clear();
-        renderScores('all');
-      }
+      if (confirm('Clear all high scores?')) { Scores.clear(); renderScores('all'); }
     });
 
     renderHome();
     showPage('home');
   }
 
-  return { init, state, Scores, quitGame, renderHome, renderScores, formatTime, launchGame, showPage };
+  return { init, state, Scores, Player, MAX_SECONDS, quitGame, renderHome, renderScores, formatTime, launchGame, showPage, updateNavPlayerName };
 })();

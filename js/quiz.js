@@ -1,42 +1,49 @@
 // ============================================================
-//  LINGUA QUEST - Quest Battle (Quiz) Game
+//  LINGUA QUEST - Quest Battle (Quiz)
+//  - Single scene: monster left, human right, both animated
+//  - 60-second countdown, +5 bonus per second remaining
+//  - Full destruction animations for cave/house/characters
 // ============================================================
 
 const QuizGame = (() => {
 
-  let words = [];
-  let allWords = [];       // full pool for wrong choices
-  let currentIndex = 0;
-  let score = 0;
-  let lives = 3;           // 3 wrong = game over
+  const MAX_SECONDS       = 60;
+  const MAX_LIVES         = 3;
+  const PTS_CORRECT       = 20;
+  const PTS_BONUS_PER_SEC = 5;
+
+  let words       = [];
+  let allWords    = [];
+  let currentIndex= 0;
+  let score       = 0;
+  let lives       = MAX_LIVES;
+  let secondsLeft = MAX_SECONDS;
   let timerInterval = null;
-  let elapsedSeconds = 0;
-  let active = false;
-  let answering = false;   // lock during feedback
+  let active      = false;
+  let answering   = false;
 
-  const MAX_LIVES = 3;
-
-  // ── DOM refs ───────────────────────────────────────────────
   const $ = id => document.getElementById(id);
 
   // ── Start ──────────────────────────────────────────────────
   function start() {
     const sub = App.state.selectedSubcategory;
-    // Use all words from same language for wrong-choice pool
     allWords = [];
     App.state.selectedLanguage.data.categories.forEach(cat =>
       cat.subcategories.forEach(s => allWords.push(...s.words))
     );
 
-    words = shuffle([...sub.words]);
+    words        = shuffle([...sub.words]);
     currentIndex = 0;
-    score = 0;
-    lives = MAX_LIVES;
-    elapsedSeconds = 0;
-    active = true;
-    answering = false;
+    score        = 0;
+    lives        = MAX_LIVES;
+    secondsLeft  = MAX_SECONDS;
+    active       = true;
+    answering    = false;
 
     $('quiz-quit').onclick = () => App.quitGame();
+
+    // Reset scene elements
+    resetScene();
     updateLives();
     startTimer();
     renderQuestion();
@@ -47,45 +54,68 @@ const QuizGame = (() => {
     clearInterval(timerInterval);
     timerInterval = setInterval(() => {
       if (!active) return;
-      elapsedSeconds++;
-      $('quiz-timer').textContent = App.formatTime(elapsedSeconds);
+      secondsLeft--;
+      const el = $('quiz-timer');
+      if (el) {
+        el.textContent = App.formatTime(secondsLeft);
+        el.style.color = secondsLeft <= 10 ? 'var(--accent-red2)' : 'var(--accent-gold)';
+      }
+      if (secondsLeft <= 0) { secondsLeft = 0; timeUp(); }
     }, 1000);
   }
 
-  function stopTimer() {
-    clearInterval(timerInterval);
-    timerInterval = null;
+  function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
+
+  function timeUp() {
+    active = false;
+    stopTimer();
+    disableChoices();
+    setTimeout(() => finishGame(false, true), 400);
+  }
+
+  // ── Scene reset ────────────────────────────────────────────
+  function resetScene() {
+    const monster = $('quiz-monster');
+    const human   = $('quiz-human');
+    const cave    = $('quiz-cave-group');
+    const house   = $('quiz-house-group');
+
+    [monster, human].forEach(el => {
+      if (!el) return;
+      el.style.transition = 'none';
+      el.style.transform  = '';
+      el.style.opacity    = '1';
+      el.style.filter     = '';
+    });
+    [cave, house].forEach(el => {
+      if (!el) return;
+      el.style.transition = 'none';
+      el.style.transform  = '';
+      el.style.opacity    = '1';
+    });
   }
 
   // ── Question ───────────────────────────────────────────────
   function renderQuestion() {
-    if (currentIndex >= words.length) {
-      triggerVictory();
-      return;
-    }
+    if (currentIndex >= words.length) { triggerVictory(); return; }
 
     const word = words[currentIndex];
     answering = false;
 
-    // Spawn monster from cave
     spawnMonster();
 
-    // Question text
     $('quiz-q-text').textContent = word.question;
-    $('quiz-q-num').textContent = (currentIndex + 1) + ' / ' + words.length;
+    $('quiz-q-num').textContent  = (currentIndex + 1) + ' / ' + words.length;
 
-    // Build 4 choices: 1 correct + 3 random wrong
     const choices = buildChoices(word);
-    const choiceEls = document.querySelectorAll('.quiz-choice');
-    const keys = ['A', 'B', 'C', 'D'];
-
-    choiceEls.forEach((btn, i) => {
-      btn.disabled = false;
-      btn.className = 'quiz-choice';
-      btn.dataset.answer = choices[i].answer;
-      btn.dataset.correct = choices[i].correct ? 'true' : 'false';
-      btn.innerHTML = `<span class="choice-key">${keys[i]}</span>${choices[i].answer}`;
-      btn.onclick = () => selectAnswer(btn);
+    const keys    = ['A', 'B', 'C', 'D'];
+    document.querySelectorAll('.quiz-choice').forEach((btn, i) => {
+      btn.disabled          = false;
+      btn.className         = 'quiz-choice';
+      btn.dataset.answer    = choices[i].answer;
+      btn.dataset.correct   = choices[i].correct ? 'true' : 'false';
+      btn.innerHTML         = `<span class="choice-key">${keys[i]}</span>${choices[i].answer}`;
+      btn.onclick           = () => selectAnswer(btn);
     });
 
     $('quiz-score').textContent = score;
@@ -93,14 +123,19 @@ const QuizGame = (() => {
 
   function buildChoices(word) {
     const correct = { answer: word.answer, correct: true };
-    const wrongs = allWords
+    const wrongs  = allWords
       .filter(w => w.answer !== word.answer)
       .sort(() => Math.random() - 0.5)
       .slice(0, 3)
       .map(w => ({ answer: w.answer, correct: false }));
+    return shuffle([correct, ...wrongs]);
+  }
 
-    const all = [correct, ...wrongs];
-    return shuffle(all);
+  function disableChoices() {
+    document.querySelectorAll('.quiz-choice').forEach(b => {
+      b.disabled = true;
+      if (b.dataset.correct === 'true') b.classList.add('correct');
+    });
   }
 
   // ── Answer selection ───────────────────────────────────────
@@ -109,8 +144,6 @@ const QuizGame = (() => {
     answering = true;
 
     const isCorrect = btn.dataset.correct === 'true';
-
-    // Highlight all correct/wrong
     document.querySelectorAll('.quiz-choice').forEach(b => {
       b.disabled = true;
       if (b.dataset.correct === 'true') b.classList.add('correct');
@@ -118,26 +151,19 @@ const QuizGame = (() => {
     });
 
     if (isCorrect) {
-      score += 20;
+      score += PTS_CORRECT;
       $('quiz-score').textContent = score;
-      // Human attacks monster
       triggerHumanAttack(() => {
         currentIndex++;
-        if (currentIndex >= words.length) {
-          setTimeout(() => triggerVictory(), 600);
-        } else {
-          setTimeout(() => renderQuestion(), 900);
-        }
+        if (currentIndex >= words.length) setTimeout(() => triggerVictory(), 300);
+        else setTimeout(() => renderQuestion(), 600);
       });
     } else {
       lives--;
       updateLives();
       triggerMonsterAttack(() => {
-        if (lives <= 0) {
-          setTimeout(() => triggerDefeat(), 600);
-        } else {
-          setTimeout(() => renderQuestion(), 900);
-        }
+        if (lives <= 0) setTimeout(() => triggerDefeat(), 300);
+        else setTimeout(() => renderQuestion(), 600);
       });
     }
   }
@@ -145,146 +171,231 @@ const QuizGame = (() => {
   // ── Lives HUD ──────────────────────────────────────────────
   function updateLives() {
     const el = $('quiz-lives');
+    if (!el) return;
     el.innerHTML = '';
     for (let i = 0; i < MAX_LIVES; i++) {
       const h = document.createElement('span');
-      h.className = 'quiz-heart' + (i >= lives ? ' lost' : '');
+      h.className   = 'quiz-heart' + (i >= lives ? ' lost' : '');
       h.textContent = '❤️';
       el.appendChild(h);
     }
   }
 
-  // ── Scene animations ───────────────────────────────────────
+  // ── Scene: spawn monster ───────────────────────────────────
   function spawnMonster() {
     const el = $('quiz-monster');
-    el.style.opacity = '0';
-    el.style.transform = 'translateX(-80px)';
-    requestAnimationFrame(() => {
-      el.style.transition = 'all 0.5s ease';
-      el.style.opacity = '1';
-      el.style.transform = 'translateX(0)';
-    });
+    if (!el) return;
+    el.style.transition = 'none';
+    el.style.transform  = 'translateX(-120px) scale(0.3)';
+    el.style.opacity    = '0';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      el.style.transition = 'transform 0.5s cubic-bezier(0.34,1.56,0.64,1), opacity 0.4s ease';
+      el.style.transform  = 'translateX(0) scale(1)';
+      el.style.opacity    = '1';
+    }));
   }
 
+  // ── Scene: human attacks monster ──────────────────────────
   function triggerHumanAttack(cb) {
     const human   = $('quiz-human');
     const monster = $('quiz-monster');
+    if (!human || !monster) { if (cb) cb(); return; }
 
-    // Human slides toward monster
-    human.style.transition = 'transform 0.3s ease';
-    human.style.transform = 'translateX(-50px)';
+    // Human runs left toward monster
+    human.style.transition = 'transform 0.35s ease';
+    human.style.transform  = 'translateX(-140px) scaleX(-1)';
+
     setTimeout(() => {
-      // Monster hit flash then disappear
-      monster.style.transition = 'all 0.3s ease';
-      monster.style.transform = 'translateX(30px) scale(0.1)';
-      monster.style.opacity = '0';
-      human.style.transform = 'translateX(0)';
+      // Impact flash on monster
+      monster.style.transition = 'all 0.15s ease';
+      monster.style.filter     = 'brightness(4) saturate(0)';
+      monster.style.transform  = 'translateX(20px) scale(1.2)';
+
       setTimeout(() => {
-        monster.style.transition = 'none';
-        monster.style.transform = '';
-        monster.style.opacity = '1';
-        if (cb) cb();
-      }, 400);
-    }, 300);
+        // Monster explodes / disintegrates
+        monster.style.transition = 'all 0.4s ease';
+        monster.style.transform  = 'translateX(60px) scale(0) rotate(180deg)';
+        monster.style.opacity    = '0';
+        monster.style.filter     = 'brightness(1)';
+
+        // Human returns home
+        human.style.transition   = 'transform 0.4s ease';
+        human.style.transform    = 'translateX(0) scaleX(1)';
+
+        setTimeout(() => {
+          // Reset monster silently for next spawn
+          monster.style.transition = 'none';
+          monster.style.transform  = '';
+          monster.style.opacity    = '1';
+          monster.style.filter     = '';
+          if (cb) cb();
+        }, 420);
+      }, 150);
+    }, 350);
   }
 
+  // ── Scene: monster attacks human ──────────────────────────
   function triggerMonsterAttack(cb) {
     const monster = $('quiz-monster');
     const human   = $('quiz-human');
+    if (!monster || !human) { if (cb) cb(); return; }
 
-    monster.style.transition = 'transform 0.3s ease';
-    monster.style.transform = 'translateX(50px)';
+    // Monster lunges right
+    monster.style.transition = 'transform 0.35s ease';
+    monster.style.transform  = 'translateX(140px) scaleX(-1)';
+
     setTimeout(() => {
-      human.style.transition = 'all 0.2s ease';
-      human.style.filter = 'brightness(3)';
-      monster.style.transform = 'translateX(0)';
+      // Human hit flash + shake
+      human.style.transition = 'all 0.15s ease';
+      human.style.filter     = 'brightness(4) hue-rotate(300deg)';
+      human.style.transform  = 'translateX(-15px)';
+
       setTimeout(() => {
-        human.style.filter = '';
-        if (cb) cb();
-      }, 400);
-    }, 300);
+        human.style.transform  = 'translateX(15px)';
+        setTimeout(() => {
+          human.style.transform  = '';
+          human.style.filter     = '';
+
+          // Monster returns
+          monster.style.transition = 'transform 0.3s ease';
+          monster.style.transform  = 'translateX(0) scaleX(1)';
+
+          setTimeout(() => { if (cb) cb(); }, 320);
+        }, 120);
+      }, 150);
+    }, 350);
   }
 
+  // ── Victory: cave destroyed ────────────────────────────────
   function triggerVictory() {
     active = false;
     stopTimer();
 
-    // Destroy cave animation
-    const cave = $('quiz-cave');
-    if (cave) {
-      cave.style.transition = 'all 0.8s ease';
-      cave.style.transform = 'scale(2)';
-      cave.style.opacity = '0';
+    const cave    = $('quiz-cave-group');
+    const monster = $('quiz-monster');
+    const human   = $('quiz-human');
+
+    // Human cheers
+    if (human) {
+      human.style.transition = 'transform 0.3s ease';
+      human.style.transform  = 'translateY(-20px) scale(1.2)';
     }
 
+    // Monster disappears
+    if (monster) {
+      monster.style.transition = 'all 0.3s ease';
+      monster.style.opacity    = '0';
+      monster.style.transform  = 'scale(0)';
+    }
+
+    // Cave crumbles with delay
+    setTimeout(() => {
+      if (cave) {
+        cave.style.transition = 'all 0.8s cubic-bezier(0.55,0,1,0.45)';
+        cave.style.transform  = 'translateY(40px) scale(0.1) rotate(-20deg)';
+        cave.style.opacity    = '0';
+      }
+    }, 400);
+
+    const bonusPoints = secondsLeft * PTS_BONUS_PER_SEC;
+    const elapsed     = MAX_SECONDS - secondsLeft;
+
     App.Scores.add({
-      game: 'quiz',
-      language: App.state.selectedLanguage.label,
-      category: App.state.selectedCategory.name,
+      player:      App.state.playerName || 'Player',
+      game:        'quiz',
+      language:    App.state.selectedLanguage.label,
+      category:    App.state.selectedCategory.name,
       subcategory: App.state.selectedSubcategory.name,
-      score,
-      time: elapsedSeconds,
-      date: new Date().toLocaleDateString('nl-NL'),
+      score:       score + bonusPoints,
+      time:        elapsed,
+      date:        new Date().toLocaleDateString('nl-NL'),
     });
 
-    setTimeout(() => showResult(true), 800);
+    setTimeout(() => showResult(true, score + bonusPoints, bonusPoints, elapsed), 1200);
   }
 
+  // ── Defeat: house destroyed ────────────────────────────────
   function triggerDefeat() {
     active = false;
     stopTimer();
 
-    // Destroy house animation
-    const house = $('quiz-house');
-    if (house) {
-      house.style.transition = 'all 0.8s ease';
-      house.style.transform = 'scale(0) rotate(15deg)';
-      house.style.opacity = '0';
+    const house   = $('quiz-house-group');
+    const human   = $('quiz-human');
+    const monster = $('quiz-monster');
+
+    // Monster cheers
+    if (monster) {
+      monster.style.transition = 'transform 0.3s ease';
+      monster.style.transform  = 'scale(1.3)';
     }
 
-    setTimeout(() => showResult(false), 800);
+    // Human falls
+    if (human) {
+      human.style.transition = 'all 0.5s ease';
+      human.style.transform  = 'translateY(30px) rotate(90deg)';
+      human.style.opacity    = '0';
+    }
+
+    // House collapses
+    setTimeout(() => {
+      if (house) {
+        house.style.transition = 'all 0.9s cubic-bezier(0.55,0,1,0.45)';
+        house.style.transform  = 'translateY(50px) scaleY(0.05) rotate(5deg)';
+        house.style.opacity    = '0';
+      }
+    }, 300);
+
+    const elapsed = MAX_SECONDS - secondsLeft;
+    setTimeout(() => showResult(false, score, 0, elapsed), 1300);
+  }
+
+  function finishGame(won, timedOut) {
+    if (won) triggerVictory();
+    else if (timedOut) {
+      const elapsed = MAX_SECONDS - secondsLeft;
+      showResult(false, score, 0, elapsed);
+    } else triggerDefeat();
   }
 
   // ── Result screen ──────────────────────────────────────────
-  function showResult(won) {
+  function showResult(won, finalScore, bonusPoints, elapsed) {
     document.getElementById('quiz-container').innerHTML = `
       <div class="result-screen">
         <div class="result-icon">${won ? '🏆' : '💀'}</div>
         <div class="result-title">${won ? 'Victory!' : 'Defeat!'}</div>
         <div class="result-subtitle">${won
-          ? 'The cave is destroyed! All monsters defeated.'
-          : 'Three wrong answers — the village fell.'}</div>
+          ? 'The cave is destroyed! All monsters defeated.' + (bonusPoints ? ' Bonus: +' + bonusPoints + ' pts' : '')
+          : (lives <= 0 ? 'Three wrong answers — the village fell.' : 'Time ran out!')}</div>
         <div class="result-stats">
-          <div class="result-stat"><div class="result-stat-value">${score}</div><div class="result-stat-label">Score</div></div>
-          <div class="result-stat"><div class="result-stat-value">${App.formatTime(elapsedSeconds)}</div><div class="result-stat-label">Time</div></div>
+          <div class="result-stat"><div class="result-stat-value">${finalScore}</div><div class="result-stat-label">Final Score</div></div>
+          <div class="result-stat"><div class="result-stat-value">${App.formatTime(elapsed)}</div><div class="result-stat-label">Time Used</div></div>
           <div class="result-stat"><div class="result-stat-value">${currentIndex}</div><div class="result-stat-label">Correct</div></div>
           <div class="result-stat"><div class="result-stat-value">${MAX_LIVES - lives}</div><div class="result-stat-label">Mistakes</div></div>
+          ${won && bonusPoints ? `<div class="result-stat"><div class="result-stat-value">+${bonusPoints}</div><div class="result-stat-label">Time Bonus</div></div>` : ''}
         </div>
         <div class="result-btns">
-          <button class="btn-primary" id="quiz-play-again">Play Again</button>
+          <button class="btn-primary"   id="quiz-play-again">Play Again</button>
           <button class="btn-secondary" id="quiz-home">Home</button>
         </div>
       </div>
     `;
     $('quiz-play-again').onclick = () => { reset(); start(); };
-    $('quiz-home').onclick = () => App.quitGame();
+    $('quiz-home').onclick       = () => App.quitGame();
   }
 
   // ── Reset ──────────────────────────────────────────────────
   function reset() {
-    active = false;
-    answering = false;
+    active = answering = false;
     stopTimer();
-    words = [];
-    allWords = [];
-    currentIndex = score = elapsedSeconds = 0;
+    words = []; allWords = [];
+    currentIndex = score = 0;
+    secondsLeft = MAX_SECONDS;
     lives = MAX_LIVES;
 
     const c = document.getElementById('quiz-container');
     if (c && !$('quiz-q-text')) c.innerHTML = quizOriginalHTML;
   }
 
-  // ── Utility ────────────────────────────────────────────────
   function shuffle(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));

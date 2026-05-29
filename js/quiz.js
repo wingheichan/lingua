@@ -33,9 +33,8 @@ const QuizGame = (() => {
   // ── Start ──────────────────────────────────────────────────
   function start() {
     const sub = App.state.selectedSubcategory;
-    allWords = [];
-    App.state.selectedLanguage.data.categories.forEach(cat =>
-      cat.subcategories.forEach(s => allWords.push(...s.words)));
+    // Wrong-answer pool = same subcategory (so answers are from the same topic)
+    allWords = [...App.state.selectedSubcategory.words];
 
     words        = shuffle([...sub.words]);
     currentIndex = 0;

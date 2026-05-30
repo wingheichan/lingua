@@ -266,6 +266,60 @@
     </div>
   </div>
 
+
+  <!-- ==========================================================
+       MISSING WORD GAME
+       ========================================================== -->
+  <div class="page" id="page-sentence">
+    <div id="sent-container">
+
+      <!-- HUD -->
+      <div class="game-hud">
+        <div class="hud-item"><span class="hud-label">Score</span><span class="hud-value" id="sent-score">0</span></div>
+        <div class="hud-item"><span class="hud-label">Time Left</span><span class="hud-value" id="sent-timer">01:00</span></div>
+        <div class="hud-item"><span class="hud-label">Progress</span><span class="hud-value" id="sent-progress-text">1 / 20</span></div>
+        <button class="btn-quit" id="sent-quit">Quit</button>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="fill-progress">
+        <div class="fill-progress-bar" id="sent-progress-bar" style="width:0%"></div>
+      </div>
+
+      <!-- Card -->
+      <div class="sent-card">
+        <!-- Dutch hint sentence -->
+        <div class="sent-hint-label">Dutch sentence (hint)</div>
+        <div class="sent-hint-row">
+          <span id="sent-hint" class="sent-hint-text"></span>
+          <span id="sent-transl" class="sent-transl"></span>
+        </div>
+
+        <!-- Foreign sentence with gap -->
+        <div class="sent-sentence-label">Complete the sentence</div>
+        <div class="sent-sentence" id="sent-sentence"></div>
+
+        <!-- Input row -->
+        <div class="sent-input-row">
+          <input
+            type="text"
+            id="sent-input"
+            class="sent-input"
+            maxlength="40"
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck="false"
+            placeholder="type the missing word…"
+          />
+          <button class="btn-primary" id="sent-submit">OK</button>
+        </div>
+
+        <div class="sent-feedback" id="sent-feedback"></div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- HIGH SCORES -->
   <div class="page" id="page-scores">
     <div class="scores-header">
@@ -296,6 +350,7 @@
 <script src="js/fill.js"></script>
 <script src="js/memory.js"></script>
 <script src="js/quiz.js"></script>
+<script src="js/sentence.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     App.init();

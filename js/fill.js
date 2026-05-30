@@ -87,7 +87,7 @@ const FillGame = (() => {
     if (!d.timerEl) return;
     d.timerEl.textContent = App.formatTime(secondsLeft);
     // Warn when low
-    d.timerEl.style.color = secondsLeft <= 10 ? 'var(--accent-red2)' : 'var(--accent-gold)';
+    d.timerEl.style.color = secondsLeft <= 10 ? 'var(--redstone)' : 'var(--gold)';
   }
 
   function timeUp() {

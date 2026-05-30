@@ -1,0 +1,74 @@
+{
+  "language": "Latin",
+  "flag": "🏛️",
+  "categories": [
+    {
+      "id": "daily_life",
+      "name": "Daily Life",
+      "subcategories": [
+        {
+          "id": "greetings",
+          "name": "Greetings",
+          "sentences": [
+            { "sentence": "Salve, ___ mea!", "answer": "amica", "hint": "Hallo, mijn ___!", "translation": "vriendin" },
+            { "sentence": "___ tibi ago.", "answer": "Gratias", "hint": "___ jou.", "translation": "Dank" },
+            { "sentence": "Quid ___ agis?", "answer": "nunc", "hint": "Hoe gaat het ___ met je?", "translation": "nu" },
+            { "sentence": "Bene ___, gratias.", "answer": "valeo", "hint": "Het ___ goed, dank je.", "translation": "gaat" },
+            { "sentence": "Vale et bene ___.", "answer": "vive", "hint": "Vaarwel en leef ___.", "translation": "goed" },
+            { "sentence": "___ amicus meus es.", "answer": "Magnus", "hint": "___ vriend ben jij.", "translation": "Grote" },
+            { "sentence": "Laetus te ___.", "answer": "video", "hint": "Blij jou te ___.", "translation": "zien" },
+            { "sentence": "Ubi ___ habitas?", "answer": "nunc", "hint": "Waar woon jij ___?", "translation": "nu" }
+          ]
+        },
+        {
+          "id": "food",
+          "name": "Food & Drink",
+          "sentences": [
+            { "sentence": "Panem et ___ volo.", "answer": "aquam", "hint": "Ik wil brood en ___.", "translation": "water" },
+            { "sentence": "___ bonum est.", "answer": "Vinum", "hint": "___ is goed.", "translation": "Wijn" },
+            { "sentence": "Esurio; ___ da mihi.", "answer": "cibum", "hint": "Ik heb honger; geef mij ___.", "translation": "voedsel" },
+            { "sentence": "Hoc ___ dulce est.", "answer": "pomum", "hint": "Dit ___ is zoet.", "translation": "fruit/appel" },
+            { "sentence": "___ coquit mater.", "answer": "Cenam", "hint": "___ kookt moeder.", "translation": "Het diner" },
+            { "sentence": "Pisce et ___ vescimur.", "answer": "pane", "hint": "Wij eten vis en ___.", "translation": "brood" },
+            { "sentence": "Lac ___ bibit.", "answer": "puer", "hint": "De ___ drinkt melk.", "translation": "jongen" },
+            { "sentence": "In ___ edimus.", "answer": "mensa", "hint": "Wij eten aan ___.", "translation": "tafel" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nature",
+      "name": "Nature",
+      "subcategories": [
+        {
+          "id": "animals",
+          "name": "Animals",
+          "sentences": [
+            { "sentence": "Canis in ___ sedet.", "answer": "horto", "hint": "De hond zit in de ___.", "translation": "tuin" },
+            { "sentence": "___ per agrum currit.", "answer": "Equus", "hint": "___ rent over het veld.", "translation": "Het paard" },
+            { "sentence": "Feles ___ videt.", "answer": "murem", "hint": "De kat ziet de ___.", "translation": "muis" },
+            { "sentence": "Avis in ___ cantat.", "answer": "arbore", "hint": "De vogel zingt in de ___.", "translation": "boom" },
+            { "sentence": "___ magna in silva est.", "answer": "Ursus", "hint": "___ groot in het bos.", "translation": "De beer" },
+            { "sentence": "Pisces in ___ natant.", "answer": "aqua", "hint": "Vissen zwemmen in het ___.", "translation": "water" },
+            { "sentence": "Leo ___ est.", "answer": "ferox", "hint": "De leeuw is ___.", "translation": "woest" },
+            { "sentence": "Agni in ___ ludunt.", "answer": "prato", "hint": "De lammeren spelen op de ___.", "translation": "weide" }
+          ]
+        },
+        {
+          "id": "weather",
+          "name": "Weather",
+          "sentences": [
+            { "sentence": "Sol in ___ lucet.", "answer": "caelo", "hint": "De zon schijnt in de ___.", "translation": "hemel" },
+            { "sentence": "___ venit et pluit.", "answer": "Imber", "hint": "___ komt en het regent.", "translation": "De regen" },
+            { "sentence": "Ventus ___ flat.", "answer": "fortis", "hint": "De wind waait ___.", "translation": "sterk" },
+            { "sentence": "Hieme ___ est.", "answer": "frigidum", "hint": "In de winter is het ___.", "translation": "koud" },
+            { "sentence": "Aestate ___ est.", "answer": "calidum", "hint": "In de zomer is het ___.", "translation": "warm" },
+            { "sentence": "___ fulget et tonat.", "answer": "Caelum", "hint": "___ bliksemt en dondert.", "translation": "De hemel" },
+            { "sentence": "Nix ___ est.", "answer": "alba", "hint": "Sneeuw is ___.", "translation": "wit" },
+            { "sentence": "Nubes ___ tegunt.", "answer": "solem", "hint": "Wolken bedekken de ___.", "translation": "zon" }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "language": "French",
+  "flag": "🇫🇷",
+  "categories": [
+    {
+      "id": "daily_life",
+      "name": "Daily Life",
+      "subcategories": [
+        {
+          "id": "greetings",
+          "name": "Greetings",
+          "sentences": [
+            { "sentence": "Bonjour, comment ___ vous?", "answer": "allez", "hint": "Goedendag, hoe ___ het met u?", "translation": "gaat" },
+            { "sentence": "Je ___ bien, merci.", "answer": "vais", "hint": "Het ___ goed met mij, dank u.", "translation": "gaat" },
+            { "sentence": "Enchanté de faire votre ___.", "answer": "connaissance", "hint": "Aangenaam ___ te maken.", "translation": "kennis" },
+            { "sentence": "À ___ demain!", "answer": "bientôt", "hint": "Tot ___ morgen!", "translation": "snel/ziens" },
+            { "sentence": "Bonne ___ à vous!", "answer": "journée", "hint": "Goede ___ aan u!", "translation": "dag" },
+            { "sentence": "Je suis ___ de te voir.", "answer": "content", "hint": "Ik ben ___ je te zien.", "translation": "blij" },
+            { "sentence": "D'où ___ vous?", "answer": "venez", "hint": "Waar ___ u vandaan?", "translation": "komt" },
+            { "sentence": "J'___ de Hollande.", "answer": "viens", "hint": "Ik ___ uit Holland.", "translation": "kom" }
+          ]
+        },
+        {
+          "id": "school",
+          "name": "School",
+          "sentences": [
+            { "sentence": "J'apprends le ___ à l'école.", "answer": "français", "hint": "Ik leer ___ op school.", "translation": "Frans" },
+            { "sentence": "Le professeur ___ la leçon.", "answer": "explique", "hint": "De leraar ___ de les.", "translation": "legt uit" },
+            { "sentence": "J'ai oublié mon ___.", "answer": "livre", "hint": "Ik ben mijn ___ vergeten.", "translation": "boek" },
+            { "sentence": "Nous ___ dans la classe.", "answer": "étudions", "hint": "Wij ___ in de klas.", "translation": "studeren" },
+            { "sentence": "L'école ___ à huit heures.", "answer": "commence", "hint": "De school ___ om acht uur.", "translation": "begint" },
+            { "sentence": "J'aime ___ les mathématiques.", "answer": "beaucoup", "hint": "Ik hou ___ van wiskunde.", "translation": "veel" },
+            { "sentence": "Mon ami est ___ intelligent.", "answer": "très", "hint": "Mijn vriend is ___ slim.", "translation": "heel" },
+            { "sentence": "Nous jouons dans la ___.", "answer": "cour", "hint": "Wij spelen in de ___.", "translation": "speelplaats" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nature",
+      "name": "Nature",
+      "subcategories": [
+        {
+          "id": "seasons",
+          "name": "Seasons",
+          "sentences": [
+            { "sentence": "En ___, il neige beaucoup.", "answer": "hiver", "hint": "In de ___ sneeuwt het veel.", "translation": "winter" },
+            { "sentence": "Le printemps ___ en mars.", "answer": "commence", "hint": "De lente ___ in maart.", "translation": "begint" },
+            { "sentence": "En été il fait très ___.", "answer": "chaud", "hint": "In de zomer is het erg ___.", "translation": "warm" },
+            { "sentence": "Les feuilles tombent en ___.", "answer": "automne", "hint": "De bladeren vallen in de ___.", "translation": "herfst" },
+            { "sentence": "Il ___ souvent en automne.", "answer": "pleut", "hint": "Het ___ vaak in de herfst.", "translation": "regent" },
+            { "sentence": "Les ___ fleurissent au printemps.", "answer": "fleurs", "hint": "De ___ bloeien in de lente.", "translation": "bloemen" },
+            { "sentence": "Le soleil ___ en été.", "answer": "brille", "hint": "De zon ___ in de zomer.", "translation": "schijnt" },
+            { "sentence": "Il fait ___ en hiver.", "answer": "froid", "hint": "Het is ___ in de winter.", "translation": "koud" }
+          ]
+        }
+      ]
+    }
+  ]
+}

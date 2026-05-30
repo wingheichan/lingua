@@ -1,0 +1,60 @@
+{
+  "language": "Old Greek",
+  "flag": "🏺",
+  "categories": [
+    {
+      "id": "daily_life",
+      "name": "Daily Life",
+      "subcategories": [
+        {
+          "id": "greetings",
+          "name": "Greetings",
+          "sentences": [
+            { "sentence": "Χαίρε, ___ μου!", "answer": "φίλε", "hint": "Hallo, mijn ___!", "translation": "vriend" },
+            { "sentence": "___ σοι λέγω.", "answer": "Χαίρε", "hint": "___ zeg ik je.", "translation": "Gegroet" },
+            { "sentence": "Πῶς ___ ἔχεις;", "answer": "νῦν", "hint": "Hoe gaat het ___ met je?", "translation": "nu" },
+            { "sentence": "Καλῶς ___, εὐχαριστῶ.", "answer": "ἔχω", "hint": "Het gaat ___, dank je.", "translation": "goed" },
+            { "sentence": "___ ὅτι ἐλήλυθας.", "answer": "Χαίρω", "hint": "___ dat je er bent.", "translation": "Ik ben blij" },
+            { "sentence": "Ὁ ___ μου φίλος ἐστίν.", "answer": "ἀγαθός", "hint": "De ___ man is mijn vriend.", "translation": "goede" },
+            { "sentence": "Ἔρρωσο καὶ ___ πράττε.", "answer": "εὖ", "hint": "Vaarwel en doe het ___.", "translation": "goed" },
+            { "sentence": "Ποῦ ___ οἰκεῖς;", "answer": "νῦν", "hint": "Waar woon jij ___?", "translation": "nu" }
+          ]
+        },
+        {
+          "id": "wisdom",
+          "name": "Wisdom",
+          "sentences": [
+            { "sentence": "Γνῶθι σεαυ___.", "answer": "τόν", "hint": "Ken je___.", "translation": "zelf" },
+            { "sentence": "Ἡ ___ ἀρετή ἐστιν.", "answer": "ψυχή", "hint": "De ___ is de deugd.", "translation": "ziel" },
+            { "sentence": "Ὁ ___ πάντων μέτρον.", "answer": "ἄνθρωπος", "hint": "De ___ is de maat van alles.", "translation": "mens" },
+            { "sentence": "Ἀρχὴ ___ ἥμισυ παντός.", "answer": "ἥμισυ", "hint": "Begin is de ___ van alles.", "translation": "helft" },
+            { "sentence": "Σοφὸς ὁ πολλὰ ___ λέγων.", "answer": "εἰδώς", "hint": "Wijs is hij die veel ___ spreekt.", "translation": "wetend" },
+            { "sentence": "___ ἡ τῶν φίλων κοινωνία.", "answer": "Καλή", "hint": "___ is de vriendschap.", "translation": "Mooi" },
+            { "sentence": "Χρόνος ___ ἀποκαλύπτει.", "answer": "πάντα", "hint": "Tijd onthult ___.", "translation": "alles" },
+            { "sentence": "Ἓν ___ ἐστιν ἀγαθόν.", "answer": "μόνον", "hint": "Er is slechts ___ goed.", "translation": "één" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nature",
+      "name": "Nature",
+      "subcategories": [
+        {
+          "id": "elements",
+          "name": "Elements",
+          "sentences": [
+            { "sentence": "Τὸ ___ πάντα ῥεῖ.", "answer": "ὕδωρ", "hint": "Het ___ stroomt overal.", "translation": "water" },
+            { "sentence": "Ὁ ___ ἐν τῷ οὐρανῷ.", "answer": "ἥλιος", "hint": "De ___ is aan de hemel.", "translation": "zon" },
+            { "sentence": "Τὸ πῦρ ___ ἐστιν.", "answer": "θερμόν", "hint": "Het vuur is ___.", "translation": "warm" },
+            { "sentence": "___ ἐκ τῆς γῆς φύεται.", "answer": "Δένδρον", "hint": "___ groeit uit de aarde.", "translation": "Een boom" },
+            { "sentence": "Ἡ ___ ἐν νυκτὶ λάμπει.", "answer": "σελήνη", "hint": "De ___ schijnt 's nachts.", "translation": "maan" },
+            { "sentence": "Ὁ ___ ἐκ τοῦ οὐρανοῦ πίπτει.", "answer": "ὑετός", "hint": "De ___ valt uit de hemel.", "translation": "regen" },
+            { "sentence": "Ἡ θάλασσα ___ ἐστίν.", "answer": "μεγάλη", "hint": "De zee is ___.", "translation": "groot" },
+            { "sentence": "Ὁ ___ ἰσχυρῶς πνεῖ.", "answer": "ἄνεμος", "hint": "De ___ waait sterk.", "translation": "wind" }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "language": "German",
+  "flag": "🇩🇪",
+  "categories": [
+    {
+      "id": "daily_life",
+      "name": "Daily Life",
+      "subcategories": [
+        {
+          "id": "greetings",
+          "name": "Greetings",
+          "sentences": [
+            { "sentence": "Guten ___, wie geht es Ihnen?", "answer": "Tag", "hint": "Goeden ___, hoe gaat het?", "translation": "dag" },
+            { "sentence": "Es geht mir ___, danke.", "answer": "gut", "hint": "Het gaat ___ met mij, dank u.", "translation": "goed" },
+            { "sentence": "Ich ___ mich sehr.", "answer": "freue", "hint": "Ik ___ me zeer.", "translation": "verheug" },
+            { "sentence": "Woher ___ du?", "answer": "kommst", "hint": "Waar ___ jij vandaan?", "translation": "kom" },
+            { "sentence": "Ich ___ aus den Niederlanden.", "answer": "komme", "hint": "Ik ___ uit Nederland.", "translation": "kom" },
+            { "sentence": "Auf ___ sehen!", "answer": "Wieder", "hint": "Tot ___ ziens!", "translation": "ziens" },
+            { "sentence": "Schön, dich ___ lernen.", "answer": "kennenzu", "hint": "Fijn ___ je te leren kennen.", "translation": "om" },
+            { "sentence": "Bis ___ Morgen!", "answer": "zum", "hint": "Tot ___ morgen!", "translation": "morgen" }
+          ]
+        },
+        {
+          "id": "family",
+          "name": "Family",
+          "sentences": [
+            { "sentence": "Mein ___ heißt Hans.", "answer": "Vater", "hint": "Mijn ___ heet Hans.", "translation": "vader" },
+            { "sentence": "Meine ___ kocht gern.", "answer": "Mutter", "hint": "Mijn ___ kookt graag.", "translation": "moeder" },
+            { "sentence": "Ich habe einen ___ und eine Schwester.", "answer": "Bruder", "hint": "Ik heb een ___ en een zus.", "translation": "broer" },
+            { "sentence": "Mein ___ ist fünf Jahre alt.", "answer": "Bruder", "hint": "Mijn ___ is vijf jaar oud.", "translation": "broer" },
+            { "sentence": "Wir ___ zusammen zu Mittag.", "answer": "essen", "hint": "Wij ___ samen middageten.", "translation": "eten" },
+            { "sentence": "Meine Familie ___ in Berlin.", "answer": "wohnt", "hint": "Mijn familie ___ in Berlijn.", "translation": "woont" },
+            { "sentence": "Der ___ liest die Zeitung.", "answer": "Großvater", "hint": "De ___ leest de krant.", "translation": "opa" },
+            { "sentence": "Die ___ backt einen Kuchen.", "answer": "Großmutter", "hint": "De ___ bakt een taart.", "translation": "oma" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nature",
+      "name": "Nature",
+      "subcategories": [
+        {
+          "id": "weather",
+          "name": "Weather",
+          "sentences": [
+            { "sentence": "Im ___ schneit es oft.", "answer": "Winter", "hint": "In de ___ sneeuwt het vaak.", "translation": "winter" },
+            { "sentence": "Die Sonne ___ heute.", "answer": "scheint", "hint": "De zon ___ vandaag.", "translation": "schijnt" },
+            { "sentence": "Es ___ sehr stark.", "answer": "regnet", "hint": "Het ___ erg hard.", "translation": "regent" },
+            { "sentence": "Im Sommer ist es sehr ___.", "answer": "heiß", "hint": "In de zomer is het erg ___.", "translation": "heet" },
+            { "sentence": "Der ___ weht kalt.", "answer": "Wind", "hint": "De ___ waait koud.", "translation": "wind" },
+            { "sentence": "Die ___ ist heute grau.", "answer": "Himmel", "hint": "De ___ is vandaag grijs.", "translation": "hemel" },
+            { "sentence": "Im Herbst ___ die Blätter.", "answer": "fallen", "hint": "In de herfst ___ de bladeren.", "translation": "vallen" },
+            { "sentence": "Es ist heute sehr ___.", "answer": "kalt", "hint": "Het is vandaag erg ___.", "translation": "koud" }
+          ]
+        }
+      ]
+    }
+  ]
+}

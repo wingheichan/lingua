@@ -18,16 +18,17 @@ const App = (() => {
   };
 
   const LANGUAGES = [
-    { key: 'latin',  file: 'json/latin.json',  label: 'Latin',    flag: '🏛️', desc: 'Classical Roman tongue' },
-    { key: 'greek',  file: 'json/greek.json',  label: 'Old Greek', flag: '🏺', desc: 'Ancient Hellenic speech' },
-    { key: 'french', file: 'json/french.json', label: 'French',    flag: '🇫🇷', desc: 'La langue de Molière' },
-    { key: 'german', file: 'json/german.json', label: 'German',    flag: '🇩🇪', desc: 'Die Sprache Goethes' },
+    { key: 'latin',  file: 'json/latin.json',  sentenceFile: 'json/sentences_latin.json',  label: 'Latin',    flag: '🏛️', desc: 'Classical Roman tongue' },
+    { key: 'greek',  file: 'json/greek.json',  sentenceFile: 'json/sentences_greek.json',  label: 'Old Greek', flag: '🏺', desc: 'Ancient Hellenic speech' },
+    { key: 'french', file: 'json/french.json', sentenceFile: 'json/sentences_french.json', label: 'French',    flag: '🇫🇷', desc: 'La langue de Molière' },
+    { key: 'german', file: 'json/german.json', sentenceFile: 'json/sentences_german.json', label: 'German',    flag: '🇩🇪', desc: 'Die Sprache Goethes' },
   ];
 
   const GAMES = [
-    { key: 'fill',   icon: '✍️',  name: 'Fill in Letters', desc: 'One letter removed – complete 20 words in 60 seconds.' },
-    { key: 'memory', icon: '🃏',  name: 'Memory Cards',    desc: 'Match words to meanings. Three modes, 60 seconds.' },
-    { key: 'quiz',   icon: '⚔️',  name: 'Quest Battle',    desc: 'Answer to fight monsters. 3 wrong answers and the village falls.' },
+    { key: 'fill',     icon: '✍️',  name: 'Fill in Letters',  desc: 'One letter removed – complete 20 words in 60 seconds.' },
+    { key: 'memory',   icon: '🃏',  name: 'Memory Cards',     desc: 'Match words to meanings. Three modes, 60 seconds.' },
+    { key: 'quiz',     icon: '⚔️',  name: 'Quest Battle',     desc: 'Answer to fight monsters. 3 wrong answers and the village falls.' },
+    { key: 'sentence', icon: '📝',  name: 'Missing Word',     desc: 'A sentence with a gap – type the missing word in 60 seconds!' },
   ];
 
   const dataCache = {};
@@ -120,6 +121,16 @@ const App = (() => {
     return data;
   }
 
+  async function loadSentenceData(lang) {
+    const cacheKey = lang.key + '_sentences';
+    if (dataCache[cacheKey]) return dataCache[cacheKey];
+    const r = await fetch(lang.sentenceFile);
+    if (!r.ok) throw new Error('Cannot load ' + lang.sentenceFile);
+    const data = await r.json();
+    dataCache[cacheKey] = data;
+    return data;
+  }
+
   // ── Page routing ───────────────────────────────────────────
   function showPage(id) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -173,6 +184,11 @@ const App = (() => {
       catch { alert('Could not load language data.'); return; }
     }
     state.selectedGame = gameKey;
+    if (gameKey === 'sentence') {
+      try {
+        state.selectedLanguage.sentenceData = await loadSentenceData(state.selectedLanguage);
+      } catch { alert('Could not load sentence data. Make sure the JSON files are uploaded.'); return; }
+    }
     renderCategorySelect();
     showPage('select');
   }
@@ -185,7 +201,10 @@ const App = (() => {
 
     const catList = document.getElementById('cat-list');
     catList.innerHTML = '';
-    lang.data.categories.forEach(cat => {
+    const catSource = state.selectedGame === 'sentence'
+      ? lang.sentenceData
+      : lang.data;
+    catSource.categories.forEach(cat => {
       const sec = document.createElement('div');
       sec.className = 'cat-section';
       sec.innerHTML = `<div class="cat-title">${cat.name}</div>`;
@@ -194,7 +213,8 @@ const App = (() => {
       cat.subcategories.forEach(sub => {
         const btn = document.createElement('button');
         btn.className = 'subcat-btn';
-        btn.textContent = sub.name + ' (' + sub.words.length + ')';
+        const count = sub.sentences ? sub.sentences.length : (sub.words ? sub.words.length : 0);
+        btn.textContent = sub.name + ' (' + count + ')';
         btn.addEventListener('click', () => chooseSubcategory(cat, sub));
         subList.appendChild(btn);
       });
@@ -218,15 +238,17 @@ const App = (() => {
 
   function launchGame() {
     state.gameActive = true;
-    if (state.selectedGame === 'fill')   { FillGame.start();   showPage('fill'); }
-    if (state.selectedGame === 'memory') { MemoryGame.start(); showPage('memory'); }
-    if (state.selectedGame === 'quiz')   { QuizGame.start();   showPage('quiz'); }
+    if (state.selectedGame === 'fill')     { FillGame.start();     showPage('fill'); }
+    if (state.selectedGame === 'memory')   { MemoryGame.start();   showPage('memory'); }
+    if (state.selectedGame === 'quiz')     { QuizGame.start();     showPage('quiz'); }
+    if (state.selectedGame === 'sentence') { SentenceGame.start(); showPage('sentence'); }
   }
 
   function quitGame() {
     FillGame.reset();
     MemoryGame.reset();
     QuizGame.reset();
+    SentenceGame.reset();
     state.gameActive = false;
     showPage('home');
   }
@@ -234,8 +256,8 @@ const App = (() => {
   // ── Scores page ────────────────────────────────────────────
   function renderScores(filterGame) {
     const all    = Scores.load();
-    const games  = ['fill', 'memory', 'quiz'];
-    const labels = { fill: 'Fill in Letters', memory: 'Memory Cards', quiz: 'Quest Battle' };
+    const games  = ['fill', 'memory', 'quiz', 'sentence'];
+    const labels = { fill: 'Fill in Letters', memory: 'Memory Cards', quiz: 'Quest Battle', sentence: 'Missing Word' };
 
     const tabsEl = document.getElementById('score-tabs');
     tabsEl.innerHTML = '';

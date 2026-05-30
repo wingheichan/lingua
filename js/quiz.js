@@ -1,7 +1,8 @@
 // ============================================================
 //  LINGUA QUEST - Quest Battle
-//  Monster LEFT (near cave) · Human RIGHT (near house)
-//  Characters approach each other, full explosion particles
+//  Fireball combat system:
+//   • Correct → human shoots blue fireball → monster explodes, new colour spawns
+//   • Wrong   → monster shoots red fireball → human explodes, new colour spawns
 // ============================================================
 
 const QuizGame = (() => {
@@ -10,6 +11,11 @@ const QuizGame = (() => {
   const MAX_LIVES         = 3;
   const PTS_CORRECT       = 20;
   const PTS_BONUS_PER_SEC = 5;
+
+  // Rotating monster emojis (different colour each spawn)
+  const MONSTERS = ['👾','👹','👺','🧟','🐲','👿','🦇','🤡'];
+  // Rotating human emojis
+  const HUMANS   = ['🧙','🧝','🧚','🦸','🧑‍🚀','🥷','🧜','🦊'];
 
   let words        = [];
   let allWords     = [];
@@ -20,37 +26,39 @@ const QuizGame = (() => {
   let timerInterval= null;
   let active       = false;
   let answering    = false;
-  let animBusy     = false;
-
-  // Pixel positions within the SVG viewBox (800×220) mapped to % for CSS
-  // Monster starts near cave  (~11% from left)
-  // Human   starts near house (~11% from right = ~78% from left)
-  const MONSTER_REST = 11;   // % left
-  const HUMAN_REST   = 11;   // % right  (right:11% in HTML)
+  let monsterIdx   = 0;
+  let humanIdx     = 0;
 
   const $ = id => document.getElementById(id);
 
   // ── Start ──────────────────────────────────────────────────
   function start() {
     const sub = App.state.selectedSubcategory;
-    // Wrong-answer pool = same subcategory (so answers are from the same topic)
-    allWords = [...App.state.selectedSubcategory.words];
+    allWords  = [...sub.words];
+    words     = shuffle([...sub.words]);
 
-    words        = shuffle([...sub.words]);
     currentIndex = 0;
     score        = 0;
     lives        = MAX_LIVES;
     secondsLeft  = MAX_SECONDS;
     active       = true;
     answering    = false;
-    animBusy     = false;
+    monsterIdx   = 0;
+    humanIdx     = 0;
 
     $('quiz-quit').onclick = () => App.quitGame();
 
-    resetCharacters();
+    setCharacter('quiz-monster', MONSTERS[0]);
+    setCharacter('quiz-human',   HUMANS[0]);
     updateLives();
     startTimer();
     renderQuestion();
+  }
+
+  // ── Characters ─────────────────────────────────────────────
+  function setCharacter(id, emoji) {
+    const el = $(id);
+    if (el) el.textContent = emoji;
   }
 
   // ── Timer ──────────────────────────────────────────────────
@@ -62,7 +70,7 @@ const QuizGame = (() => {
       const el = $('quiz-timer');
       if (el) {
         el.textContent = App.formatTime(secondsLeft);
-        el.style.color = secondsLeft <= 10 ? 'var(--accent-red2)' : 'var(--accent-gold)';
+        el.style.color = secondsLeft <= 10 ? 'var(--redstone)' : 'var(--gold)';
       }
       if (secondsLeft <= 0) { secondsLeft = 0; timeUp(); }
     }, 1000);
@@ -77,39 +85,14 @@ const QuizGame = (() => {
     setTimeout(() => showResult(false, score, 0, MAX_SECONDS - secondsLeft, true), 600);
   }
 
-  // ── Characters ─────────────────────────────────────────────
-  // Monster: positioned left:X%  (moves right to attack)
-  // Human:   positioned right:X% (moves left to attack)
-
-  function resetCharacters() {
-    const monster = $('quiz-monster');
-    const human   = $('quiz-human');
-    if (monster) {
-      monster.style.transition = 'none';
-      monster.style.transform  = 'scaleX(1)';   // faces right naturally
-      monster.style.opacity    = '1';
-      monster.style.left       = MONSTER_REST + '%';
-      monster.style.right      = '';
-      monster.style.filter     = '';
-    }
-    if (human) {
-      human.style.transition = 'none';
-      human.style.transform  = 'scaleX(-1)';    // flip to face left (toward monster)
-      human.style.opacity    = '1';
-      human.style.right      = HUMAN_REST + '%';
-      human.style.left       = '';
-      human.style.filter     = '';
-    }
-  }
-
   // ── Question ───────────────────────────────────────────────
   function renderQuestion() {
     if (currentIndex >= words.length) { triggerVictory(); return; }
 
     answering = false;
-    animBusy  = false;
 
-    spawnMonster();
+    // Spawn new monster (slide in from cave side)
+    spawnCharacter('quiz-monster', 'left');
 
     const word = words[currentIndex];
     $('quiz-q-text').textContent = word.question;
@@ -125,15 +108,15 @@ const QuizGame = (() => {
       btn.innerHTML       = `<span class="choice-key">${keys[i]}</span>${choices[i].answer}`;
       btn.onclick         = () => selectAnswer(btn);
     });
-
     $('quiz-score').textContent = score;
   }
 
   function buildChoices(word) {
     const correct = { answer: word.answer, correct: true };
-    const wrongs  = shuffle(allWords.filter(w => w.answer !== word.answer))
-      .slice(0, 3)
-      .map(w => ({ answer: w.answer, correct: false }));
+    const pool    = allWords.filter(w => w.answer !== word.answer);
+    const wrongs  = shuffle(pool).slice(0, 3).map(w => ({ answer: w.answer, correct: false }));
+    // pad if pool too small
+    while (wrongs.length < 3) wrongs.push({ answer: '—', correct: false });
     return shuffle([correct, ...wrongs]);
   }
 
@@ -144,27 +127,26 @@ const QuizGame = (() => {
     });
   }
 
-  // ── Spawn monster (slide in from cave) ────────────────────
-  function spawnMonster() {
-    const el = $('quiz-monster');
+  // ── Spawn character (slide in from side) ──────────────────
+  function spawnCharacter(id, from) {
+    const el = $(id);
     if (!el) return;
     el.style.transition = 'none';
-    el.style.transform  = 'scaleX(1) scale(0.2)';
     el.style.opacity    = '0';
-    el.style.left       = '5%';
+    el.style.transform  = from === 'left'
+      ? 'translateX(-60px) scale(0.4)'
+      : 'translateX(60px)  scale(0.4)';
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      el.style.transition = 'left 0.5s cubic-bezier(0.34,1.56,0.64,1), transform 0.5s cubic-bezier(0.34,1.56,0.64,1), opacity 0.4s ease';
-      el.style.transform  = 'scaleX(1) scale(1)';
+      el.style.transition = 'transform 0.45s cubic-bezier(0.34,1.6,0.64,1), opacity 0.3s ease';
       el.style.opacity    = '1';
-      el.style.left       = MONSTER_REST + '%';
+      el.style.transform  = 'translateX(0) scale(1)';
     }));
   }
 
-  // ── Answer selection ───────────────────────────────────────
+  // ── Select answer ──────────────────────────────────────────
   function selectAnswer(btn) {
-    if (!active || answering || animBusy) return;
+    if (!active || answering) return;
     answering = true;
-    animBusy  = true;
 
     const isCorrect = btn.dataset.correct === 'true';
     document.querySelectorAll('.quiz-choice').forEach(b => {
@@ -176,19 +158,34 @@ const QuizGame = (() => {
     if (isCorrect) {
       score += PTS_CORRECT;
       $('quiz-score').textContent = score;
-      animHumanAttack(() => {
-        animBusy = false;
-        currentIndex++;
-        if (currentIndex >= words.length) setTimeout(() => triggerVictory(), 200);
-        else setTimeout(() => renderQuestion(), 300);
+      shootFireball('human-to-monster', () => {
+        explodeCharacter('quiz-monster', () => {
+          currentIndex++;
+          if (currentIndex >= words.length) {
+            triggerVictory();
+          } else {
+            monsterIdx = (monsterIdx + 1) % MONSTERS.length;
+            setCharacter('quiz-monster', MONSTERS[monsterIdx]);
+            answering = false;
+            renderQuestion();
+          }
+        });
       });
     } else {
       lives--;
       updateLives();
-      animMonsterAttack(() => {
-        animBusy = false;
-        if (lives <= 0) setTimeout(() => triggerDefeat(), 200);
-        else setTimeout(() => renderQuestion(), 300);
+      shootFireball('monster-to-human', () => {
+        explodeCharacter('quiz-human', () => {
+          if (lives <= 0) {
+            triggerDefeat();
+          } else {
+            humanIdx = (humanIdx + 1) % HUMANS.length;
+            setCharacter('quiz-human', HUMANS[humanIdx]);
+            spawnCharacter('quiz-human', 'right');
+            answering = false;
+            renderQuestion();
+          }
+        });
       });
     }
   }
@@ -206,152 +203,202 @@ const QuizGame = (() => {
     }
   }
 
-  // ── ANIMATION: Human rushes LEFT, monster dies ─────────────
-  // Human: positioned right:11% — to move left we decrease right (or use translateX negative)
-  function animHumanAttack(cb) {
-    const human   = $('quiz-human');
-    const monster = $('quiz-monster');
-    if (!human || !monster) { cb && cb(); return; }
-
-    const wrap    = $('quiz-battle-wrap');
-    const wrapW   = wrap ? wrap.offsetWidth : 800;
-    // Human needs to travel ~75% of scene width to reach monster
-    const travel  = Math.round(wrapW * 0.68);
-
-    // Phase 1: human charges left toward monster
-    human.style.transition = 'right 0.42s cubic-bezier(0.4,0,0.2,1), transform 0.42s ease';
-    human.style.right      = 'calc(' + HUMAN_REST + '% + ' + travel + 'px)';
-    human.style.transform  = 'scaleX(-1) scale(1.15)';
-
-    setTimeout(() => {
-      // Impact: monster flash white
-      monster.style.transition = 'filter 0.1s, transform 0.1s';
-      monster.style.filter     = 'brightness(5) saturate(0)';
-      monster.style.transform  = 'scale(1.3)';
-
-      setTimeout(() => {
-        // Monster explodes outward
-        monster.style.transition = 'all 0.45s ease-out';
-        monster.style.transform  = 'scale(0) rotate(360deg) translateX(-60px)';
-        monster.style.opacity    = '0';
-        monster.style.filter     = '';
-
-        // Human bounces back to rest
-        human.style.transition = 'right 0.38s cubic-bezier(0.34,1.3,0.64,1), transform 0.38s ease';
-        human.style.right      = HUMAN_REST + '%';
-        human.style.transform  = 'scaleX(-1) scale(1)';
-
-        setTimeout(() => {
-          // Silently reset monster for next spawn
-          monster.style.transition = 'none';
-          monster.style.transform  = 'scaleX(1) scale(1)';
-          monster.style.opacity    = '1';
-          monster.style.filter     = '';
-          cb && cb();
-        }, 460);
-      }, 120);
-    }, 430);
-  }
-
-  // ── ANIMATION: Monster rushes RIGHT, human is hit ─────────
-  function animMonsterAttack(cb) {
-    const monster = $('quiz-monster');
-    const human   = $('quiz-human');
-    if (!monster || !human) { cb && cb(); return; }
-
-    const wrap   = $('quiz-battle-wrap');
-    const wrapW  = wrap ? wrap.offsetWidth : 800;
-    const travel = Math.round(wrapW * 0.66);
-
-    // Phase 1: monster charges right
-    monster.style.transition = 'left 0.42s cubic-bezier(0.4,0,0.2,1), transform 0.42s ease';
-    monster.style.left       = 'calc(' + MONSTER_REST + '% + ' + travel + 'px)';
-    monster.style.transform  = 'scaleX(1) scale(1.15)';
-
-    setTimeout(() => {
-      // Impact: human flash red
-      human.style.transition = 'filter 0.1s, transform 0.1s';
-      human.style.filter     = 'brightness(4) hue-rotate(280deg)';
-      human.style.transform  = 'scaleX(-1) scale(1.2) translateX(12px)';
-
-      setTimeout(() => {
-        // Human stumbles back
-        human.style.transition = 'filter 0.3s, transform 0.35s';
-        human.style.filter     = '';
-        human.style.transform  = 'scaleX(-1) scale(1) translateX(-8px)';
-
-        // Monster returns
-        monster.style.transition = 'left 0.38s cubic-bezier(0.34,1.3,0.64,1), transform 0.38s ease';
-        monster.style.left       = MONSTER_REST + '%';
-        monster.style.transform  = 'scaleX(1) scale(1)';
-
-        setTimeout(() => {
-          human.style.transform = 'scaleX(-1) scale(1)';
-          cb && cb();
-        }, 360);
-      }, 130);
-    }, 430);
-  }
-
-  // ── EXPLOSION particles (canvas) ──────────────────────────
-  function runExplosion(centerXpct, color1, color2, cb) {
+  // ── FIREBALL (canvas animation) ────────────────────────────
+  function shootFireball(direction, onImpact) {
     const canvas = $('quiz-explosion-canvas');
-    if (!canvas) { cb && cb(); return; }
+    if (!canvas) { onImpact && onImpact(); return; }
 
     const wrap   = $('quiz-battle-wrap');
     canvas.width  = wrap.offsetWidth;
     canvas.height = wrap.offsetHeight;
     const ctx     = canvas.getContext('2d');
-    const cx      = canvas.width  * (centerXpct / 100);
-    const cy      = canvas.height * 0.75;
 
-    // Build particles
+    // Determine source & target X positions (% of width)
+    const monsterEl = $('quiz-monster');
+    const humanEl   = $('quiz-human');
+    const wrapRect  = wrap.getBoundingClientRect();
+
+    function charCenterX(el) {
+      if (!el) return canvas.width / 2;
+      const r = el.getBoundingClientRect();
+      return r.left - wrapRect.left + r.width / 2;
+    }
+
+    const monsterX = charCenterX(monsterEl);
+    const humanX   = charCenterX(humanEl);
+    const groundY  = canvas.height * 0.55;
+
+    let fromX, toX;
+    const isBlue = direction === 'human-to-monster';
+    if (isBlue) { fromX = humanX;   toX = monsterX; }
+    else        { fromX = monsterX; toX = humanX; }
+
+    // Fireball properties
+    const color1 = isBlue ? '#44AAFF' : '#FF4400';
+    const color2 = isBlue ? '#0066FF' : '#FF8800';
+    const glow   = isBlue ? 'rgba(68,170,255,0.6)' : 'rgba(255,100,0,0.6)';
+
+    let progress = 0;
+    const STEPS  = 28;
+    let impacted = false;
+
+    // Trail particles
+    const trail = [];
+
+    function frame() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      progress++;
+
+      const t  = progress / STEPS;
+      const cx = fromX + (toX - fromX) * t;
+      // arc: rises then falls
+      const arc = Math.sin(t * Math.PI) * (canvas.height * 0.28);
+      const cy  = groundY - arc;
+
+      // Add trail particle
+      trail.push({ x: cx, y: cy, life: 1, r: 7 + Math.random() * 5 });
+
+      // Draw trail
+      for (const p of trail) {
+        p.life -= 0.08;
+        if (p.life <= 0) continue;
+        ctx.globalAlpha = p.life * 0.6;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
+        ctx.fillStyle = color2;
+        ctx.fill();
+      }
+
+      // Glow halo
+      ctx.globalAlpha = 0.35;
+      const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, 28);
+      grd.addColorStop(0, glow);
+      grd.addColorStop(1, 'transparent');
+      ctx.beginPath();
+      ctx.arc(cx, cy, 28, 0, Math.PI * 2);
+      ctx.fillStyle = grd;
+      ctx.fill();
+
+      // Fireball core
+      ctx.globalAlpha = 1;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+      ctx.fillStyle = color1;
+      ctx.globalAlpha = 0.9;
+      ctx.fill();
+      // inner bright
+      ctx.beginPath();
+      ctx.arc(cx - 3, cy - 3, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.globalAlpha = 0.7;
+      ctx.fill();
+
+      ctx.globalAlpha = 1;
+
+      if (progress >= STEPS && !impacted) {
+        impacted = true;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        onImpact && onImpact();
+        return;
+      }
+
+      if (!impacted) requestAnimationFrame(frame);
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  // ── EXPLODE character (canvas burst) ──────────────────────
+  function explodeCharacter(charId, cb) {
+    const canvas  = $('quiz-explosion-canvas');
+    const charEl  = $(charId);
+    if (!canvas || !charEl) { cb && cb(); return; }
+
+    const wrap    = $('quiz-battle-wrap');
+    const wrapRect= wrap.getBoundingClientRect();
+    const charRect= charEl.getBoundingClientRect();
+    const cx      = charRect.left - wrapRect.left + charRect.width  / 2;
+    const cy      = charRect.top  - wrapRect.top  + charRect.height / 2;
+
+    canvas.width  = wrap.offsetWidth;
+    canvas.height = wrap.offsetHeight;
+    const ctx     = canvas.getContext('2d');
+
+    // Shake then hide the character
+    charEl.style.transition = 'transform 0.08s steps(2)';
+    charEl.style.transform  = 'scale(1.4) translateX(8px)';
+    setTimeout(() => {
+      charEl.style.transform = 'scale(1.4) translateX(-8px)';
+      setTimeout(() => {
+        charEl.style.transition = 'transform 0.15s ease, opacity 0.15s ease';
+        charEl.style.transform  = 'scale(0)';
+        charEl.style.opacity    = '0';
+      }, 80);
+    }, 80);
+
+    // Build burst particles
     const particles = [];
-    const COUNT = 60;
-    for (let i = 0; i < COUNT; i++) {
-      const angle = (Math.PI * 2 * i) / COUNT + (Math.random() - 0.5) * 0.4;
-      const speed = 2 + Math.random() * 6;
+    const COLOURS   = charId === 'quiz-monster'
+      ? ['#7EC850','#FFD700','#FF6600','#FF0000','#FFFFFF']
+      : ['#5DE5E5','#FFFFFF','#FFD700','#FF88FF','#88AAFF'];
+
+    for (let i = 0; i < 55; i++) {
+      const angle = (Math.PI * 2 * i) / 55 + (Math.random() - 0.5) * 0.3;
+      const speed = 2.5 + Math.random() * 5.5;
+      particles.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 2.5,
+        r: 4 + Math.random() * 7,
+        life: 1,
+        decay: 0.025 + Math.random() * 0.025,
+        color: COLOURS[Math.floor(Math.random() * COLOURS.length)],
+        square: Math.random() > 0.5,  // Minecraft-style square bits
+      });
+    }
+    // Sparks
+    for (let i = 0; i < 25; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 3 + Math.random() * 8;
       particles.push({
         x: cx, y: cy,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed - 3,
-        r:  3 + Math.random() * 6,
+        r: 2 + Math.random() * 3,
         life: 1,
-        decay: 0.018 + Math.random() * 0.022,
-        color: Math.random() > 0.5 ? color1 : color2,
-      });
-    }
-    // Extra sparks
-    for (let i = 0; i < 30; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 4 + Math.random() * 9;
-      particles.push({
-        x: cx, y: cy,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 4,
-        r:  1.5 + Math.random() * 2.5,
-        life: 1,
-        decay: 0.03 + Math.random() * 0.04,
-        color: '#fff',
+        decay: 0.04 + Math.random() * 0.04,
+        color: '#FFFFFF',
+        square: false,
       });
     }
 
-    // Shockwave ring
-    let ringR = 0;
-    let ringLife = 1;
+    // Shockwave
+    let ringR = 0, ringLife = 1;
 
     function frame() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Shockwave
+      // Shockwave ring
       if (ringLife > 0) {
-        ringR   += 7;
-        ringLife -= 0.04;
+        ringR   += 9;
+        ringLife -= 0.06;
         ctx.beginPath();
         ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(255,220,100,${ringLife * 0.7})`;
-        ctx.lineWidth   = 3;
+        ctx.strokeStyle = `rgba(255,220,80,${ringLife * 0.8})`;
+        ctx.lineWidth   = 4;
         ctx.stroke();
+        // second ring slightly behind
+        if (ringR > 20) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, ringR - 14, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(255,140,0,${ringLife * 0.5})`;
+          ctx.lineWidth   = 2;
+          ctx.stroke();
+        }
       }
 
       let any = false;
@@ -360,15 +407,22 @@ const QuizGame = (() => {
         any = true;
         p.x    += p.vx;
         p.y    += p.vy;
-        p.vy   += 0.22;   // gravity
-        p.vx   *= 0.97;   // drag
+        p.vy   += 0.28;
+        p.vx   *= 0.96;
         p.life -= p.decay;
 
         ctx.globalAlpha = Math.max(0, p.life);
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
-        ctx.fillStyle = p.color;
-        ctx.fill();
+        if (p.square) {
+          // Minecraft block debris
+          const s = p.r * p.life;
+          ctx.fillStyle = p.color;
+          ctx.fillRect(p.x - s/2, p.y - s/2, s, s);
+        } else {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, Math.max(0.5, p.r * p.life), 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.fill();
+        }
       }
       ctx.globalAlpha = 1;
 
@@ -376,9 +430,14 @@ const QuizGame = (() => {
         requestAnimationFrame(frame);
       } else {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Restore character for next spawn
+        charEl.style.transition = 'none';
+        charEl.style.opacity    = '1';
+        charEl.style.transform  = '';
         cb && cb();
       }
     }
+
     requestAnimationFrame(frame);
   }
 
@@ -387,34 +446,18 @@ const QuizGame = (() => {
     active = false;
     stopTimer();
 
-    const monster = $('quiz-monster');
-    const human   = $('quiz-human');
-    const cave    = $('quiz-cave-group');
-
-    // Monster vanishes
-    if (monster) {
-      monster.style.transition = 'all 0.3s ease';
-      monster.style.transform  = 'scale(0) rotate(180deg)';
-      monster.style.opacity    = '0';
-    }
-    // Human cheers
+    const human = $('quiz-human');
     if (human) {
       human.style.transition = 'transform 0.4s cubic-bezier(0.34,1.8,0.64,1)';
-      human.style.transform  = 'scaleX(-1) scale(1.4) translateY(-14px)';
+      human.style.transform  = 'scaleX(-1) scale(1.3) translateY(-12px)';
     }
 
-    // Cave crumbles (SVG)
-    setTimeout(() => {
-      if (cave) {
-        cave.style.transition = 'transform 0.5s ease-in, opacity 0.5s ease-in';
-        cave.style.transformOrigin = '105px 168px';
-        cave.style.transform  = 'scale(0.1) rotate(-30deg)';
-        cave.style.opacity    = '0';
-      }
-      // Explosion at cave position (~13% from left of scene)
-      runExplosion(13, '#c9a84c', '#e74c3c', null);
-      runExplosion(13, '#ff8c00', '#ff4500', null);
-    }, 350);
+    // Explode cave via canvas at cave position
+    setTimeout(() => explodeBuildingAt(0.13, ['#7A7A7A','#555','#FF6600','#FFD700','#FF4400'], () => {
+      // hide cave SVG
+      const cave = $('quiz-cave-group');
+      if (cave) { cave.style.opacity = '0'; }
+    }), 300);
 
     const bonusPoints = secondsLeft * PTS_BONUS_PER_SEC;
     const finalScore  = score + bonusPoints;
@@ -429,7 +472,7 @@ const QuizGame = (() => {
       date: new Date().toLocaleDateString('nl-NL'),
     });
 
-    setTimeout(() => showResult(true, finalScore, bonusPoints, elapsed, false), 1600);
+    setTimeout(() => showResult(true, finalScore, bonusPoints, elapsed, false), 1800);
   }
 
   // ── DEFEAT: house explodes ─────────────────────────────────
@@ -438,36 +481,116 @@ const QuizGame = (() => {
     stopTimer();
 
     const monster = $('quiz-monster');
-    const human   = $('quiz-human');
-    const house   = $('quiz-house-group');
-
-    // Monster gloats
     if (monster) {
       monster.style.transition = 'transform 0.4s cubic-bezier(0.34,1.8,0.64,1)';
-      monster.style.transform  = 'scaleX(1) scale(1.5) translateY(-10px)';
-    }
-    // Human falls
-    if (human) {
-      human.style.transition = 'all 0.55s ease-in';
-      human.style.transform  = 'scaleX(-1) scale(0.8) rotate(80deg) translateY(30px)';
-      human.style.opacity    = '0';
+      monster.style.transform  = 'scale(1.4) translateY(-8px)';
     }
 
-    // House explodes (SVG)
-    setTimeout(() => {
-      if (house) {
-        house.style.transition = 'transform 0.5s ease-in, opacity 0.5s ease-in';
-        house.style.transformOrigin = '689px 140px';
-        house.style.transform  = 'scale(0.05) rotate(20deg)';
-        house.style.opacity    = '0';
-      }
-      // Explosion at house position (~86% from left)
-      runExplosion(86, '#2ecc71', '#27ae60', null);
-      runExplosion(86, '#f39c12', '#e74c3c', null);
-    }, 400);
+    // Explode house at right side
+    setTimeout(() => explodeBuildingAt(0.86, ['#9C7A3C','#5C3D1E','#5DE5E5','#7EC850','#FF6600'], () => {
+      const house = $('quiz-house-group');
+      if (house) { house.style.opacity = '0'; }
+    }), 300);
 
     const elapsed = MAX_SECONDS - secondsLeft;
-    setTimeout(() => showResult(false, score, 0, elapsed, false), 1700);
+    setTimeout(() => showResult(false, score, 0, elapsed, false), 1800);
+  }
+
+  // ── Explode a building at X% position ─────────────────────
+  function explodeBuildingAt(xPct, colours, onDone) {
+    const canvas = $('quiz-explosion-canvas');
+    if (!canvas) { onDone && onDone(); return; }
+
+    const wrap   = $('quiz-battle-wrap');
+    canvas.width  = wrap.offsetWidth;
+    canvas.height = wrap.offsetHeight;
+    const ctx     = canvas.getContext('2d');
+    const cx      = canvas.width  * xPct;
+    const cy      = canvas.height * 0.7;
+
+    // Big block explosion
+    const particles = [];
+    for (let i = 0; i < 80; i++) {
+      const angle = (Math.PI * 2 * i) / 80 + (Math.random() - 0.5) * 0.4;
+      const speed = 2 + Math.random() * 8;
+      particles.push({
+        x: cx + (Math.random()-0.5)*40, y: cy + (Math.random()-0.5)*20,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 4,
+        r: 5 + Math.random() * 12,
+        life: 1,
+        decay: 0.014 + Math.random() * 0.018,
+        color: colours[Math.floor(Math.random() * colours.length)],
+        square: Math.random() > 0.4,
+      });
+    }
+    for (let i = 0; i < 35; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 4 + Math.random() * 10;
+      particles.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 5,
+        r: 2 + Math.random() * 4,
+        life: 1,
+        decay: 0.03 + Math.random() * 0.03,
+        color: '#FFFFFF',
+        square: false,
+      });
+    }
+
+    let ringR = 0, ringLife = 1;
+
+    function frame() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (ringLife > 0) {
+        ringR   += 12;
+        ringLife -= 0.04;
+        // 3 concentric rings for big boom
+        [ringR, ringR - 18, ringR - 34].forEach((r, i) => {
+          if (r <= 0) return;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(255,${180-i*40},0,${Math.max(0, ringLife - i*0.15) * 0.9})`;
+          ctx.lineWidth   = 5 - i;
+          ctx.stroke();
+        });
+      }
+
+      let any = false;
+      for (const p of particles) {
+        if (p.life <= 0) continue;
+        any = true;
+        p.x    += p.vx;
+        p.y    += p.vy;
+        p.vy   += 0.25;
+        p.vx   *= 0.97;
+        p.life -= p.decay;
+
+        ctx.globalAlpha = Math.max(0, p.life);
+        if (p.square) {
+          const s = Math.max(1, p.r * p.life);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(p.x - s/2, p.y - s/2, s, s);
+        } else {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, Math.max(0.5, p.r * p.life), 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.fill();
+        }
+      }
+      ctx.globalAlpha = 1;
+
+      if (any || ringLife > 0) {
+        requestAnimationFrame(frame);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        onDone && onDone();
+      }
+    }
+
+    requestAnimationFrame(frame);
   }
 
   // ── Result ─────────────────────────────────────────────────
@@ -475,21 +598,21 @@ const QuizGame = (() => {
     document.getElementById('quiz-container').innerHTML = `
       <div class="result-screen">
         <div class="result-icon">${won ? '🏆' : '💀'}</div>
-        <div class="result-title">${won ? 'Victory!' : timedOut ? 'Time Up!' : 'Defeat!'}</div>
+        <div class="result-title">${won ? 'VICTORY!' : timedOut ? 'TIME UP!' : 'DEFEAT!'}</div>
         <div class="result-subtitle">${won
-          ? 'The cave is destroyed! All monsters defeated.' + (bonusPoints ? ' Bonus: +' + bonusPoints + ' pts' : '')
-          : timedOut ? 'The clock ran out.'
-          : 'Three wrong answers — the village fell.'}</div>
+          ? 'The cave crumbles! All monsters defeated!' + (bonusPoints ? ' Bonus: +' + bonusPoints + ' pts' : '')
+          : timedOut ? 'The clock ran out!' : 'Three wrong answers — the village fell!'
+        }</div>
         <div class="result-stats">
-          <div class="result-stat"><div class="result-stat-value">${finalScore}</div><div class="result-stat-label">Final Score</div></div>
-          <div class="result-stat"><div class="result-stat-value">${App.formatTime(elapsed)}</div><div class="result-stat-label">Time Used</div></div>
+          <div class="result-stat"><div class="result-stat-value">${finalScore}</div><div class="result-stat-label">Score</div></div>
+          <div class="result-stat"><div class="result-stat-value">${App.formatTime(elapsed)}</div><div class="result-stat-label">Time</div></div>
           <div class="result-stat"><div class="result-stat-value">${currentIndex}</div><div class="result-stat-label">Correct</div></div>
           <div class="result-stat"><div class="result-stat-value">${MAX_LIVES - lives}</div><div class="result-stat-label">Mistakes</div></div>
-          ${won && bonusPoints ? `<div class="result-stat"><div class="result-stat-value">+${bonusPoints}</div><div class="result-stat-label">Time Bonus</div></div>` : ''}
+          ${won && bonusPoints ? `<div class="result-stat"><div class="result-stat-value">+${bonusPoints}</div><div class="result-stat-label">Bonus</div></div>` : ''}
         </div>
         <div class="result-btns">
-          <button class="btn-primary"   id="quiz-play-again">Play Again</button>
-          <button class="btn-secondary" id="quiz-home">Home</button>
+          <button class="btn-primary"   id="quiz-play-again">PLAY AGAIN</button>
+          <button class="btn-secondary" id="quiz-home">HOME</button>
         </div>
       </div>`;
     $('quiz-play-again').onclick = () => { reset(); start(); };
@@ -498,12 +621,25 @@ const QuizGame = (() => {
 
   // ── Reset ──────────────────────────────────────────────────
   function reset() {
-    active = answering = animBusy = false;
+    active = answering = false;
     stopTimer();
     words = []; allWords = [];
     currentIndex = score = 0;
     secondsLeft  = MAX_SECONDS;
     lives        = MAX_LIVES;
+    monsterIdx   = humanIdx = 0;
+
+    // Clear canvas
+    const canvas = $('quiz-explosion-canvas');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    // Restore cave/house opacity
+    const cave  = $('quiz-cave-group');
+    const house = $('quiz-house-group');
+    if (cave)  cave.style.opacity  = '1';
+    if (house) house.style.opacity = '1';
 
     const c = $('quiz-container');
     if (c && !$('quiz-q-text')) c.innerHTML = quizOriginalHTML;

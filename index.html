@@ -242,12 +242,10 @@
         <!-- Explosion canvas sits on top of SVG, same size -->
         <canvas id="quiz-explosion-canvas" class="quiz-explosion-canvas"></canvas>
 
-        <!-- Characters: monster LEFT, human RIGHT -->
+        <!-- Characters: monster LEFT (fixed), human RIGHT (fixed, mirrored) -->
         <div class="quiz-chars">
-          <!-- Monster near cave on left -->
-          <span class="quiz-char" id="quiz-monster" style="left:11%;">👾</span>
-          <!-- Human near house on right -->
-          <span class="quiz-char" id="quiz-human"   style="right:11%;">🧙</span>
+          <span class="quiz-char" id="quiz-monster" style="left:9%;">👾</span>
+          <span class="quiz-char" id="quiz-human"   style="right:9%; transform:scaleX(-1);">🧙</span>
         </div>
 
       </div><!-- end quiz-battle-wrap -->

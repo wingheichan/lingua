@@ -163,7 +163,7 @@ const MemoryGame = (() => {
       const el = $('memory-timer');
       if (el) {
         el.textContent = App.formatTime(secondsLeft);
-        el.style.color = secondsLeft <= 10 ? 'var(--accent-red2)' : 'var(--accent-gold)';
+        el.style.color = secondsLeft <= 10 ? 'var(--redstone)' : 'var(--gold)';
       }
       if (secondsLeft <= 0) { secondsLeft = 0; timeUp(); }
     }, 1000);

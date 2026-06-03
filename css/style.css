@@ -1113,11 +1113,180 @@ main { padding-top: 64px; min-height: 100vh; }
   .quiz-q-text   { font-size: 0.65rem; }
 }
 
-/* ============================================================
-   MISSING WORD GAME
-   ============================================================ */
-#page-sentence { max-width: 750px; margin: 0 auto; }
 
+/* ============================================================
+   MISSING WORD — STREET FIGHTER ARENA
+   ============================================================ */
+#page-sentence { max-width: 900px; margin: 0 auto; }
+
+/* ── Health bars ─────────────────────────────────────────── */
+.fight-healthbars {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 0.5rem;
+  background: var(--ui-dark);
+  border: 3px solid #111;
+  box-shadow: inset 2px 2px 0 rgba(255,255,255,0.08), 0 3px 0 rgba(0,0,0,0.5);
+}
+
+.fight-hb-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.fight-hb-left  { align-items: flex-start; }
+.fight-hb-right { align-items: flex-end; }
+
+.fight-hb-name {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--gold);
+  text-shadow: 1px 1px 0 #000;
+  letter-spacing: 0.08em;
+}
+
+.fight-hb-outer {
+  width: 100%;
+  height: 14px;
+  background: #111;
+  border: 2px solid #333;
+  box-shadow: inset 1px 1px 0 rgba(0,0,0,0.6);
+  position: relative;
+  overflow: hidden;
+}
+
+.fight-hb-fill {
+  height: 100%;
+  background: #17DD62;
+  transition: width 0.35s ease, background 0.35s ease;
+  /* pixel stripe pattern */
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255,255,255,0.12) 0px,
+    rgba(255,255,255,0.12) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  background-color: #17DD62;
+  background-blend-mode: overlay;
+  position: relative;
+}
+.fight-hb-alien { }
+.fight-hb-human { }
+
+/* HP bar direction: alien fills left→right, human right→left */
+.fight-hb-right .fight-hb-outer {
+  direction: rtl;
+}
+.fight-hb-right .fight-hb-fill {
+  direction: ltr;
+}
+
+.fight-vs {
+  font-family: var(--font-pixel);
+  font-size: 14px;
+  color: var(--redstone);
+  text-shadow: 2px 2px 0 #000, 0 0 12px rgba(204,34,0,0.6);
+  padding: 0 0.4rem;
+  flex-shrink: 0;
+  animation: vsPulse 0.7s steps(2) infinite alternate;
+}
+@keyframes vsPulse {
+  from { text-shadow: 2px 2px 0 #000, 0 0 8px rgba(204,34,0,0.5); }
+  to   { text-shadow: 2px 2px 0 #000, 0 0 20px rgba(255,80,0,0.9); }
+}
+
+/* ── Arena scene wrapper ──────────────────────────────────── */
+.sent-arena-wrap {
+  position: relative;
+  width: 100%;
+  height: clamp(160px, 26vw, 260px);
+  border: 4px solid #111;
+  box-shadow: inset 2px 2px 0 rgba(255,255,255,0.06), 4px 4px 0 rgba(0,0,0,0.5);
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.sent-arena-svg {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: block;
+  image-rendering: pixelated;
+}
+
+.sent-arena-canvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* ── Fighters ─────────────────────────────────────────────── */
+.sent-fighters {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0;
+  padding-bottom: 8%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.sent-fighter-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 50%;                /* each fighter owns half the arena */
+  position: relative;
+  will-change: transform, opacity;
+}
+
+/* Alien on left side, Human on right side */
+#sent-alien-wrap { padding-right: 2%; }
+#sent-human-wrap { padding-left: 2%; }
+
+.sent-fighter-label {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: rgba(255,255,255,0.5);
+  text-shadow: 1px 1px 0 #000;
+  margin-bottom: 3px;
+  letter-spacing: 0.1em;
+}
+
+.sent-fighter {
+  font-size: clamp(2.8rem, 7vw, 5rem);
+  display: inline-block;
+  filter: drop-shadow(2px 6px 0 rgba(0,0,0,0.8));
+  will-change: transform, filter, opacity;
+  line-height: 1;
+  /* idle fighting stance bob */
+  animation: fightBob 0.5s steps(2) infinite alternate;
+}
+#sent-alien { animation-delay: 0s; }
+#sent-human { animation-delay: 0.15s; }
+
+@keyframes fightBob {
+  from { margin-bottom: 0;   transform: scaleX(-1) scale(1); }
+  to   { margin-bottom: 6px; transform: scaleX(-1) scale(1.02); }
+}
+/* Human faces left (no horizontal flip) */
+#sent-human {
+  animation-name: fightBobHuman;
+}
+@keyframes fightBobHuman {
+  from { margin-bottom: 0;   transform: scaleX(1) scale(1); }
+  to   { margin-bottom: 6px; transform: scaleX(1) scale(1.02); }
+}
+
+/* ── Sentence card ────────────────────────────────────────── */
 .sent-card {
   background: var(--ui-bg);
   border: 4px solid var(--ui-dark);
@@ -1125,7 +1294,7 @@ main { padding-top: 64px; min-height: 100vh; }
     inset 3px 3px 0 var(--ui-shine),
     inset -3px -3px 0 rgba(0,0,0,0.35),
     4px 4px 0 rgba(0,0,0,0.3);
-  padding: 1.8rem 1.5rem;
+  padding: 1.4rem 1.5rem 1.2rem;
 }
 
 /* Dutch hint row */
@@ -1135,18 +1304,18 @@ main { padding-top: 64px; min-height: 100vh; }
   color: var(--stone-dark);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.35rem;
 }
 .sent-hint-row {
   display: flex;
   align-items: baseline;
   gap: 0.6rem;
-  margin-bottom: 1.4rem;
+  margin-bottom: 1rem;
   flex-wrap: wrap;
 }
 .sent-hint-text {
   font-family: var(--font-vt);
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   color: var(--grass-dark);
   text-shadow: 1px 1px 0 rgba(255,255,255,0.4);
 }
@@ -1164,14 +1333,14 @@ main { padding-top: 64px; min-height: 100vh; }
   color: var(--stone-dark);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
 }
 .sent-sentence {
   font-family: var(--font-pixel);
-  font-size: 14px;
+  font-size: 13px;
   color: var(--ui-dark);
-  line-height: 2;
-  margin-bottom: 1.4rem;
+  line-height: 2.2;
+  margin-bottom: 1.1rem;
   min-height: 2.5rem;
   text-shadow: 1px 1px 0 rgba(255,255,255,0.3);
 }
@@ -1181,33 +1350,33 @@ main { padding-top: 64px; min-height: 100vh; }
   display: inline-block;
   background: var(--gold);
   color: var(--coal);
-  padding: 0 6px;
+  padding: 1px 7px;
   border: 2px solid var(--gold-dark);
   box-shadow: inset 1px 1px 0 #FFE566, inset -1px -1px 0 var(--gold-dark);
   border-radius: 2px;
   animation: goldPulse 0.8s steps(2) infinite;
-  font-size: 14px;
-  letter-spacing: 0.1em;
+  font-size: 13px;
+  letter-spacing: 0.12em;
 }
 
-/* Filled correct answer highlight */
+/* Correctly filled word */
 .sent-answer-fill {
   display: inline-block;
   background: var(--emerald);
   color: var(--coal);
-  padding: 0 6px;
+  padding: 1px 7px;
   border: 2px solid #0A9940;
   box-shadow: inset 1px 1px 0 #80FF80, inset -1px -1px 0 #0A9940;
   border-radius: 2px;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 /* Input row */
 .sent-input-row {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.6rem;
   align-items: center;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.6rem;
 }
 
 .sent-input {
@@ -1217,8 +1386,8 @@ main { padding-top: 64px; min-height: 100vh; }
   box-shadow: inset 2px 2px 0 rgba(0,0,0,0.5), inset -2px -2px 0 rgba(255,255,255,0.08);
   color: var(--gold);
   font-family: var(--font-pixel);
-  font-size: 12px;
-  padding: 0.65rem 1rem;
+  font-size: 11px;
+  padding: 0.6rem 1rem;
   outline: none;
   text-shadow: 0 0 8px rgba(255,215,0,0.4);
   caret-color: var(--gold);
@@ -1227,7 +1396,7 @@ main { padding-top: 64px; min-height: 100vh; }
 .sent-input:focus {
   box-shadow: inset 2px 2px 0 rgba(0,0,0,0.5), inset -2px -2px 0 rgba(255,255,255,0.08), 0 0 0 3px var(--gold);
 }
-.sent-input::placeholder { color: var(--stone); font-size: 10px; }
+.sent-input::placeholder { color: var(--stone); font-size: 9px; }
 
 .sent-input.sent-shake {
   animation: shake 0.35s steps(3);
@@ -1243,3 +1412,12 @@ main { padding-top: 64px; min-height: 100vh; }
 }
 .sent-feedback.correct { color: var(--emerald); text-shadow: 0 0 8px rgba(23,221,98,0.5); }
 .sent-feedback.wrong   { color: var(--redstone); }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .fight-vs { font-size: 10px; }
+  .fight-hb-name { font-size: 7px; }
+  .sent-fighter { font-size: 2.2rem; }
+  .sent-sentence { font-size: 11px; }
+  .sent-input    { font-size: 10px; }
+}

@@ -1131,12 +1131,11 @@ main { padding-top: 64px; min-height: 100vh; }
 /* Dutch hint row */
 .sent-hint-label {
   font-family: var(--font-pixel);
-  font-size: 0.38px;
+  font-size: 10px;
   color: var(--stone-dark);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: 0.4rem;
-  font-size: 10px;
 }
 .sent-hint-row {
   display: flex;

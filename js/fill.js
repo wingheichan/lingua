@@ -184,8 +184,8 @@ const FillGame = (() => {
       const box = document.getElementById('missing-box');
       if (box) {
         box.textContent = correct;
-        box.style.borderColor = 'var(--accent-green)';
-        box.style.color = 'var(--accent-green2)';
+        box.style.borderColor = 'var(--emerald)';
+        box.style.color = 'var(--grass-dark)';
       }
 
       setTimeout(() => { currentIndex++; loadWord(); }, 700);

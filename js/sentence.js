@@ -1,117 +1,742 @@
 // ============================================================
-//  LINGUA QUEST - Missing Word Game (Street Fighter arena)
-//
-//  Alien LEFT vs Human RIGHT, both standing in the centre.
-//  Correct answer → human punches/kicks alien (canvas effect)
-//  Wrong answer   → alien punches/kicks human  (canvas effect)
-//  3 wrong answers → human KO, alien wins (defeat)
-//  Complete all sentences with <3 wrong → human wins, alien KO
+//  LINGUA QUEST - Missing Word Game
+//  Full canvas fighting engine (Street Fighter / Tekken style)
+//  - Drawn sprites with idle/walk/attack/hurt/death animations
+//  - Alien LEFT faces right, Human RIGHT faces left
+//  - Game loop at 60fps with requestAnimationFrame
+//  - Correct → human attacks alien; Wrong → alien attacks human
+//  - 3 hits = KO; complete all sentences = VICTORY
 // ============================================================
 
 const SentenceGame = (() => {
 
+  // ── Game constants ─────────────────────────────────────────
   const WORD_TARGET       = 20;
   const MAX_SECONDS       = 60;
   const PTS_CORRECT       = 10;
   const PTS_BONUS_PER_SEC = 5;
-  const MAX_LIVES         = 3;
+  const MAX_WRONG         = 3;
 
-  // Rotating fighters
-  const ALIENS = ['👽','🤖','👾','🧟','🐙','👻','🦑','🎃'];
-  const HUMANS = ['🧙','🥷','🦸','🧝','👩‍🚀','🧑‍🎤','🧞','🧜'];
-
-  // Punch/kick attack labels shown on hit
-  const ATTACKS = ['POW!','BAM!','KICK!','SMASH!','HIT!','COMBO!','WHAM!','CRACK!'];
-
+  // ── State ──────────────────────────────────────────────────
   let sentences    = [];
   let currentIndex = 0;
   let current      = null;
   let score        = 0;
-  let lives        = MAX_LIVES;      // human's lives
   let wrongCount   = 0;
   let secondsLeft  = MAX_SECONDS;
   let timerInterval= null;
   let active       = false;
-  let animating    = false;
-  let alienHP      = 100;
-  let humanHP      = 100;
-  let alienIdx     = 0;
-  let humanIdx     = 0;
+  let inputLocked  = false;
+
+  // Canvas / game loop
+  let canvas, ctx, animFrame;
+  let lastTime = 0;
+
+  // Fighter instances
+  let alien, human;
 
   const $ = id => document.getElementById(id);
 
-  // ── DOM refs ───────────────────────────────────────────────
-  const dom = () => ({
-    progressBar:  $('sent-progress-bar'),
-    progressText: $('sent-progress-text'),
-    scoreEl:      $('sent-score'),
-    timerEl:      $('sent-timer'),
-    btnQuit:      $('sent-quit'),
-    sentenceEl:   $('sent-sentence'),
-    hintEl:       $('sent-hint'),
-    translEl:     $('sent-transl'),
-    input:        $('sent-input'),
-    feedback:     $('sent-feedback'),
-    submitBtn:    $('sent-submit'),
-    alienEl:      $('sent-alien'),
-    humanEl:      $('sent-human'),
-    alienHp:      $('sent-alien-hp'),
-    humanHp:      $('sent-human-hp'),
-    canvas:       $('sent-arena-canvas'),
-    arenaWrap:    $('sent-arena-wrap'),
-  });
+  // ════════════════════════════════════════════════════════════
+  //  FIGHTER CLASS — canvas-drawn animated sprite
+  // ════════════════════════════════════════════════════════════
+  class Fighter {
+    constructor(cfg) {
+      this.x       = cfg.x;
+      this.y       = cfg.y;
+      this.width   = cfg.width  || 80;
+      this.height  = cfg.height || 120;
+      this.color   = cfg.color;          // main body colour
+      this.color2  = cfg.color2;         // accent colour
+      this.facing  = cfg.facing;         // 'right' | 'left'
+      this.name    = cfg.name;
+      this.isAlien = cfg.isAlien || false;
 
-  // ── Build 20-sentence list ─────────────────────────────────
+      this.hp      = 100;
+      this.maxHP   = 100;
+
+      // Animation state
+      this.state   = 'idle';   // idle | walk | attack | hurt | death | victory
+      this.frame   = 0;
+      this.frameT  = 0;       // time accumulator ms
+      this.frameDur= 80;      // ms per frame
+
+      // Attack hitbox (active frames only)
+      this.hitbox     = null;   // { x, y, w, h } world coords
+      this.hitActive  = false;
+      this.hitFrame   = 3;      // frame on which hit box activates
+      this.attackFrames = 7;
+
+      // Hurt flash
+      this.hurtTimer  = 0;
+
+      // Particle effects owned by this fighter
+      this.particles  = [];
+
+      // Walk bob
+      this.bobT = 0;
+    }
+
+    // ── Idle animation frames ────────────────────────────────
+    get idleFrames() { return 6; }
+    get attackTotalFrames() { return this.attackFrames; }
+    get hurtFrames() { return 4; }
+    get deathFrames() { return 12; }
+
+    setState(s) {
+      if (this.state === 'death') return; // dead stays dead
+      this.state = s;
+      this.frame = 0;
+      this.frameT = 0;
+      if (s !== 'attack') { this.hitbox = null; this.hitActive = false; }
+    }
+
+    update(dt) {
+      // Particle update
+      this.particles = this.particles.filter(p => p.life > 0);
+      this.particles.forEach(p => {
+        p.x    += p.vx * dt * 0.06;
+        p.y    += p.vy * dt * 0.06;
+        p.vy   += 0.3 * dt * 0.06;
+        p.life -= p.decay * dt * 0.06;
+      });
+
+      this.bobT += dt * 0.004;
+
+      if (this.hurtTimer > 0) this.hurtTimer -= dt;
+
+      this.frameT += dt;
+      if (this.frameT >= this.frameDur) {
+        this.frameT -= this.frameDur;
+        this.frame++;
+
+        switch (this.state) {
+          case 'idle':
+            this.frame %= this.idleFrames;
+            break;
+
+          case 'walk':
+            this.frame %= 6;
+            break;
+
+          case 'attack':
+            if (this.frame === this.hitFrame) {
+              this.hitActive = true;
+              this.spawnHitbox();
+            }
+            if (this.frame > this.hitFrame) {
+              this.hitActive = false;
+              this.hitbox = null;
+            }
+            if (this.frame >= this.attackTotalFrames) {
+              this.setState('idle');
+            }
+            break;
+
+          case 'hurt':
+            if (this.frame >= this.hurtFrames) this.setState('idle');
+            break;
+
+          case 'death':
+            if (this.frame >= this.deathFrames) this.frame = this.deathFrames - 1;
+            break;
+
+          case 'victory':
+            this.frame %= 8;
+            break;
+        }
+      }
+    }
+
+    spawnHitbox() {
+      const reach = 70;
+      if (this.facing === 'right') {
+        this.hitbox = { x: this.x + this.width, y: this.y + 20, w: reach, h: 40 };
+      } else {
+        this.hitbox = { x: this.x - reach, y: this.y + 20, w: reach, h: 40 };
+      }
+    }
+
+    checkHit(other) {
+      if (!this.hitActive || !this.hitbox) return false;
+      const h = this.hitbox;
+      return (
+        h.x < other.x + other.width  &&
+        h.x + h.w > other.x          &&
+        h.y < other.y + other.height &&
+        h.y + h.h > other.y
+      );
+    }
+
+    spawnHitParticles(x, y) {
+      const colors = this.isAlien
+        ? ['#FF3300','#FF8800','#FFCC00','#FFFFFF']
+        : ['#4488FF','#88CCFF','#FFFFFF','#00FFAA'];
+      for (let i = 0; i < 20; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const s = 2 + Math.random() * 4;
+        this.particles.push({
+          x, y,
+          vx: Math.cos(a) * s, vy: Math.sin(a) * s - 2,
+          r: 3 + Math.random() * 5,
+          life: 1,
+          decay: 0.025 + Math.random() * 0.03,
+          color: colors[Math.floor(Math.random() * colors.length)],
+        });
+      }
+    }
+
+    // ── Draw ─────────────────────────────────────────────────
+    draw(ctx) {
+      ctx.save();
+
+      // Flip context if facing left
+      const flip = this.facing === 'left';
+      const cx   = this.x + this.width / 2;
+      const cy   = this.y;
+      if (flip) {
+        ctx.translate(cx * 2, 0);
+        ctx.scale(-1, 1);
+      }
+
+      // Hurt flash
+      if (this.hurtTimer > 0 && Math.floor(this.hurtTimer / 60) % 2 === 0) {
+        ctx.filter = 'brightness(3) saturate(0)';
+      }
+
+      const x = this.x, y = this.y;
+      const w = this.width, h = this.height;
+      const f = this.frame;
+
+      // Death: fall sideways
+      if (this.state === 'death') {
+        const progress = f / this.deathFrames;
+        ctx.translate(x + w/2, y + h);
+        ctx.rotate(progress * Math.PI / 2 * (this.facing === 'right' ? 1 : -1));
+        ctx.translate(-(x + w/2), -(y + h));
+        ctx.globalAlpha = Math.max(0.1, 1 - progress * 0.7);
+      }
+
+      // ── Draw the fighter body ────────────────────────────
+      this._drawBody(ctx, x, y, w, h, f);
+
+      ctx.filter = 'none';
+      ctx.restore();
+
+      // Draw particles (not affected by flip)
+      this.particles.forEach(p => {
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, Math.max(0.5, p.r * p.life), 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+
+      // Draw hit label
+      if (this._hitLabel) {
+        this._hitLabel.life -= 0.018;
+        this._hitLabel.y    -= 0.4;
+        if (this._hitLabel.life > 0) {
+          ctx.globalAlpha = this._hitLabel.life;
+          ctx.font        = 'bold 18px "Press Start 2P", monospace';
+          ctx.textAlign   = 'center';
+          ctx.strokeStyle = '#000';
+          ctx.lineWidth   = 5;
+          ctx.strokeText(this._hitLabel.text, this._hitLabel.x, this._hitLabel.y);
+          ctx.fillStyle   = '#FFD700';
+          ctx.fillText(this._hitLabel.text, this._hitLabel.x, this._hitLabel.y);
+          ctx.globalAlpha = 1;
+        } else {
+          this._hitLabel = null;
+        }
+      }
+    }
+
+    showHitLabel(text, x, y) {
+      this._hitLabel = { text, x, y, life: 1 };
+    }
+
+    _drawBody(ctx, x, y, w, h, f) {
+      const isAlien = this.isAlien;
+      const c1 = this.color;
+      const c2 = this.color2;
+      const shadow = '#00000066';
+
+      // Bob / breathing
+      const bob    = Math.sin(this.bobT) * 3;
+      const squat  = Math.abs(Math.sin(this.bobT)) * 2;
+      const by     = y + bob;  // body y with bob
+      const bh     = h - squat;
+
+      // ── IDLE / WALK ──────────────────────────────────────
+      if (this.state === 'idle' || this.state === 'walk' || this.state === 'victory') {
+        const wf    = this.state === 'walk' ? f : 0;
+        const legOff= this.state === 'walk' ? Math.sin(f * 1.2) * 14 : 0;
+
+        // Shadow on ground
+        ctx.fillStyle = shadow;
+        ctx.beginPath();
+        ctx.ellipse(x + w/2, y + h + 4, w * 0.45, 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Legs
+        ctx.fillStyle = c2;
+        ctx.fillRect(x + 8,       by + bh * 0.72, 18, bh * 0.3 + legOff);
+        ctx.fillRect(x + w - 26,  by + bh * 0.72, 18, bh * 0.3 - legOff);
+
+        // Feet
+        ctx.fillStyle = '#2a1500';
+        ctx.fillRect(x + 4,      by + bh - 2 + Math.max(0, legOff),  22, 10);
+        ctx.fillRect(x + w - 26, by + bh - 2 + Math.max(0, -legOff), 22, 10);
+
+        // Torso
+        const torsoW = w * 0.72, torsoX = x + w * 0.14;
+        ctx.fillStyle = c1;
+        ctx.fillRect(torsoX, by + bh * 0.26, torsoW, bh * 0.48);
+
+        // Arms (swing with walk)
+        const armSwing = this.state === 'walk' ? Math.sin(f * 1.2) * 10 : 0;
+        ctx.fillStyle  = c1;
+        ctx.fillRect(x,         by + bh * 0.27, 14, bh * 0.35 - armSwing);
+        ctx.fillRect(x + w - 14, by + bh * 0.27, 14, bh * 0.35 + armSwing);
+
+        // Hands
+        ctx.fillStyle = c2;
+        ctx.beginPath(); ctx.arc(x + 7, by + bh * 0.60 - armSwing * 0.3, 9, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x + w - 7, by + bh * 0.60 + armSwing * 0.3, 9, 0, Math.PI*2); ctx.fill();
+
+        // Neck
+        ctx.fillStyle = c1;
+        ctx.fillRect(x + w*0.38, by + bh * 0.18, w * 0.24, bh * 0.10);
+
+        // Head
+        this._drawHead(ctx, x, by, w, bh, c1, c2, isAlien, f);
+
+        // Victory: raise arms
+        if (this.state === 'victory') {
+          const vf = Math.sin(f * 0.9) * 20;
+          ctx.fillStyle = c1;
+          ctx.fillRect(x,          by + bh * 0.27 - vf, 14, 40);
+          ctx.fillRect(x + w - 14, by + bh * 0.27 - vf, 14, 40);
+          ctx.fillStyle = c2;
+          ctx.beginPath(); ctx.arc(x + 7, by + bh * 0.27 - vf, 9, 0, Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.arc(x + w - 7, by + bh * 0.27 - vf, 9, 0, Math.PI*2); ctx.fill();
+        }
+      }
+
+      // ── ATTACK ───────────────────────────────────────────
+      else if (this.state === 'attack') {
+        // Body lean forward during attack
+        const lean = f < this.hitFrame ? f * 3 : (this.attackTotalFrames - f) * 2;
+
+        // Shadow
+        ctx.fillStyle = shadow;
+        ctx.beginPath();
+        ctx.ellipse(x + w/2 + lean, y + h + 4, w * 0.45, 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Back leg
+        ctx.fillStyle = c2;
+        ctx.fillRect(x + 8, by + bh * 0.72, 18, bh * 0.28);
+        ctx.fillStyle = '#2a1500';
+        ctx.fillRect(x + 4, by + bh - 2, 22, 10);
+
+        // Front leg (kick if attack frame)
+        if (f >= this.hitFrame - 1) {
+          // Kick leg extends forward
+          ctx.fillStyle = c2;
+          ctx.save();
+          ctx.translate(x + w - 18 + lean, by + bh * 0.72);
+          ctx.rotate(-0.5);
+          ctx.fillRect(0, 0, 18, bh * 0.35);
+          ctx.fillStyle = '#2a1500';
+          ctx.fillRect(-2, bh * 0.32, 22, 10);
+          ctx.restore();
+        } else {
+          ctx.fillStyle = c2;
+          ctx.fillRect(x + w - 26, by + bh * 0.72, 18, bh * 0.28);
+          ctx.fillStyle = '#2a1500';
+          ctx.fillRect(x + w - 26, by + bh - 2, 22, 10);
+        }
+
+        // Torso (leaned)
+        ctx.fillStyle = c1;
+        ctx.fillRect(x + lean * 0.5, by + bh * 0.26, w * 0.72, bh * 0.48);
+
+        // Punch arm extends forward
+        const punchExt = f >= this.hitFrame ? 32 + lean : lean;
+        ctx.fillStyle  = c1;
+        ctx.fillRect(x + w * 0.7 + punchExt, by + bh * 0.28, 36, 16); // punch fist forearm
+        ctx.fillStyle  = c2;
+        ctx.beginPath(); ctx.arc(x + w * 0.7 + punchExt + 36, by + bh * 0.36, 12, 0, Math.PI*2); ctx.fill();
+
+        // Back arm
+        ctx.fillStyle = c1;
+        ctx.fillRect(x - 4, by + bh * 0.27, 14, bh * 0.3);
+        ctx.fillStyle = c2;
+        ctx.beginPath(); ctx.arc(x + 3, by + bh * 0.56, 9, 0, Math.PI*2); ctx.fill();
+
+        // Neck + head
+        ctx.fillStyle = c1;
+        ctx.fillRect(x + w * 0.38 + lean * 0.3, by + bh * 0.18, w * 0.24, bh * 0.10);
+        this._drawHead(ctx, x + lean * 0.3, by, w, bh, c1, c2, isAlien, f);
+      }
+
+      // ── HURT ─────────────────────────────────────────────
+      else if (this.state === 'hurt') {
+        const reelBack = f * 8;
+
+        ctx.fillStyle = shadow;
+        ctx.beginPath();
+        ctx.ellipse(x + w/2 - reelBack * 0.3, y + h + 4, w*0.45, 6, 0, 0, Math.PI*2);
+        ctx.fill();
+
+        // Stagger back
+        const bx = x - reelBack;
+        ctx.fillStyle = c2;
+        ctx.fillRect(bx + 8,      by + bh*0.72, 18, bh*0.28);
+        ctx.fillRect(bx + w - 26, by + bh*0.72, 18, bh*0.28);
+        ctx.fillStyle = '#2a1500';
+        ctx.fillRect(bx + 4,      by + bh - 2, 22, 10);
+        ctx.fillRect(bx + w - 26, by + bh - 2, 22, 10);
+        ctx.fillStyle = c1;
+        ctx.fillRect(bx + w*0.14, by + bh*0.26, w*0.72, bh*0.48);
+        // Arms flung back
+        ctx.fillStyle = c1;
+        ctx.fillRect(bx - 10,       by + bh*0.22, 14, bh*0.28);
+        ctx.fillRect(bx + w - 4,    by + bh*0.22, 14, bh*0.28);
+        ctx.fillStyle = c2;
+        ctx.beginPath(); ctx.arc(bx - 3, by + bh*0.50, 9, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(bx + w + 3, by + bh*0.50, 9, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = c1;
+        ctx.fillRect(bx + w*0.38, by + bh*0.18, w*0.24, bh*0.10);
+        this._drawHead(ctx, bx, by, w, bh, c1, c2, isAlien, f);
+      }
+    }
+
+    // ── Head drawing (shared by states) ──────────────────────
+    _drawHead(ctx, x, y, w, h, c1, c2, isAlien, f) {
+      const headW = w * 0.52, headH = h * 0.22;
+      const hx    = x + (w - headW) / 2;
+      const hy    = y + h * 0.02;
+      const blink = (f % 8 === 0) ? 2 : 0;
+
+      ctx.fillStyle = c1;
+      ctx.beginPath();
+      ctx.roundRect(hx, hy, headW, headH, 6);
+      ctx.fill();
+
+      if (isAlien) {
+        // ── Alien head ──────────────────────────────────────
+        // Big oval alien head
+        ctx.fillStyle = c1;
+        ctx.beginPath();
+        ctx.ellipse(x + w/2, hy + headH * 0.4, headW * 0.65, headH * 0.72, 0, 0, Math.PI*2);
+        ctx.fill();
+
+        // Alien eyes (large, black, with glow)
+        const eyeGlow = this.state === 'attack' ? '#FF4400' : (this.state === 'hurt' ? '#FF0000' : '#00FF44');
+        ctx.fillStyle = '#000';
+        ctx.beginPath(); ctx.ellipse(x + w*0.35, hy + headH*0.3, 9, 7, -0.3, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(x + w*0.65, hy + headH*0.3, 9, 7,  0.3, 0, Math.PI*2); ctx.fill();
+        // Iris glow
+        ctx.fillStyle = eyeGlow;
+        ctx.beginPath(); ctx.ellipse(x + w*0.35, hy + headH*0.3, 5, 4, -0.3, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(x + w*0.65, hy + headH*0.3, 5, 4,  0.3, 0, Math.PI*2); ctx.fill();
+
+        // Alien mouth slit
+        ctx.strokeStyle = c2;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x + w*0.38, hy + headH*0.62);
+        ctx.lineTo(x + w*0.62, hy + headH*0.62);
+        ctx.stroke();
+
+        // Antennae
+        ctx.strokeStyle = c2;
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(x+w*0.42, hy); ctx.lineTo(x+w*0.38, hy-12); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x+w*0.58, hy); ctx.lineTo(x+w*0.64, hy-12); ctx.stroke();
+        ctx.fillStyle = c2;
+        ctx.beginPath(); ctx.arc(x+w*0.38, hy-13, 3, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x+w*0.64, hy-13, 3, 0, Math.PI*2); ctx.fill();
+
+      } else {
+        // ── Human head ──────────────────────────────────────
+        ctx.fillStyle = '#FDBCB4'; // skin
+        ctx.beginPath();
+        ctx.roundRect(hx, hy, headW, headH, 8);
+        ctx.fill();
+
+        // Hair
+        ctx.fillStyle = c2;
+        ctx.fillRect(hx, hy, headW, headH * 0.32);
+        ctx.beginPath(); ctx.arc(hx, hy + headH*0.16, headH*0.2, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(hx + headW, hy + headH*0.16, headH*0.2, 0, Math.PI*2); ctx.fill();
+
+        // Eyes
+        ctx.fillStyle = this.state === 'hurt' ? '#FF4444' : '#222';
+        const eyeY = hy + headH * 0.52;
+        ctx.beginPath(); ctx.ellipse(hx + headW*0.3, eyeY, 5, 5 - blink, 0, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(hx + headW*0.7, eyeY, 5, 5 - blink, 0, 0, Math.PI*2); ctx.fill();
+        // Eye shine
+        ctx.fillStyle = '#FFF';
+        ctx.beginPath(); ctx.arc(hx + headW*0.3 + 2, eyeY - 1, 1.5, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(hx + headW*0.7 + 2, eyeY - 1, 1.5, 0, Math.PI*2); ctx.fill();
+
+        // Mouth
+        ctx.strokeStyle = this.state === 'attack' ? '#e74c3c' : '#8B4513';
+        ctx.lineWidth   = 2;
+        ctx.beginPath();
+        if (this.state === 'attack') {
+          ctx.moveTo(hx + headW*0.3, hy + headH*0.78);
+          ctx.lineTo(hx + headW*0.7, hy + headH*0.78);
+        } else {
+          ctx.arc(hx + headW/2, hy + headH*0.70, headW*0.22, 0.2, Math.PI - 0.2);
+        }
+        ctx.stroke();
+      }
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  BACKGROUND DRAWING
+  // ════════════════════════════════════════════════════════════
+  function drawBackground(ctx, W, H) {
+    // Sky gradient (purple/sunset)
+    const sky = ctx.createLinearGradient(0, 0, 0, H * 0.75);
+    sky.addColorStop(0,   '#1a0030');
+    sky.addColorStop(0.5, '#5B0089');
+    sky.addColorStop(1,   '#C2410C');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, H * 0.75);
+
+    // Moon
+    ctx.fillStyle   = '#FFFDE0';
+    ctx.shadowBlur  = 20;
+    ctx.shadowColor = '#FFFDE0';
+    ctx.beginPath(); ctx.arc(W * 0.15, H * 0.12, 22, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur  = 0;
+    // Moon crater
+    ctx.fillStyle = '#EEE8C0';
+    ctx.beginPath(); ctx.arc(W * 0.15 + 6, H * 0.12 - 4, 6, 0, Math.PI*2); ctx.fill();
+
+    // Stars (deterministic)
+    ctx.fillStyle = '#FFFFFF';
+    const starSeed = [
+      [0.25,0.06],[0.38,0.04],[0.52,0.09],[0.65,0.03],[0.75,0.07],
+      [0.85,0.12],[0.90,0.05],[0.45,0.15],[0.60,0.14],[0.30,0.14],
+    ];
+    starSeed.forEach(([sx, sy]) => {
+      ctx.globalAlpha = 0.7 + Math.sin(Date.now() * 0.001 + sx * 100) * 0.3;
+      ctx.beginPath(); ctx.arc(sx * W, sy * H, 1.2, 0, Math.PI*2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    // Distant mountains silhouette
+    ctx.fillStyle = '#2D0050';
+    ctx.beginPath();
+    ctx.moveTo(0, H * 0.58);
+    ctx.lineTo(W * 0.08, H * 0.40);
+    ctx.lineTo(W * 0.18, H * 0.52);
+    ctx.lineTo(W * 0.30, H * 0.36);
+    ctx.lineTo(W * 0.42, H * 0.50);
+    ctx.lineTo(W * 0.55, H * 0.32);
+    ctx.lineTo(W * 0.67, H * 0.48);
+    ctx.lineTo(W * 0.78, H * 0.38);
+    ctx.lineTo(W * 0.88, H * 0.52);
+    ctx.lineTo(W, H * 0.44);
+    ctx.lineTo(W, H * 0.75); ctx.lineTo(0, H * 0.75);
+    ctx.closePath(); ctx.fill();
+
+    // Arena floor (pixel tiles)
+    const floorY = H * 0.75;
+    const floorH = H - floorY;
+    ctx.fillStyle = '#2D2040';
+    ctx.fillRect(0, floorY, W, floorH);
+    ctx.fillStyle = '#3D3060';
+    ctx.fillRect(0, floorY, W, 8);
+
+    // Tile grid
+    ctx.strokeStyle = '#1A1030';
+    ctx.lineWidth   = 1;
+    ctx.globalAlpha = 0.4;
+    for (let tx = 0; tx < W; tx += 80) {
+      ctx.beginPath(); ctx.moveTo(tx, floorY); ctx.lineTo(tx, H); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.moveTo(0, floorY + floorH * 0.5); ctx.lineTo(W, floorY + floorH * 0.5); ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Centre line glow
+    ctx.strokeStyle = 'rgba(255,215,0,0.25)';
+    ctx.lineWidth   = 3;
+    ctx.beginPath(); ctx.moveTo(W/2, floorY); ctx.lineTo(W/2, H); ctx.stroke();
+
+    // Crowd silhouettes (left & right, gap in middle)
+    ctx.fillStyle = '#1A0028';
+    const drawCrowdHead = (cx, cy, r) => {
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fill();
+    };
+    const leftCrowd  = [[0.04,0.66],[0.09,0.63],[0.14,0.67],[0.20,0.64],[0.26,0.67],[0.32,0.63]];
+    const rightCrowd = [[0.68,0.63],[0.74,0.67],[0.80,0.64],[0.86,0.67],[0.91,0.63],[0.96,0.66]];
+    [...leftCrowd, ...rightCrowd].forEach(([cx,cy]) => drawCrowdHead(cx*W, cy*H, 10 + Math.random()*4));
+
+    // Spotlight cones
+    const drawSpot = (sx, ex, col) => {
+      const grad = ctx.createLinearGradient(sx, 0, ex, floorY);
+      grad.addColorStop(0, col.replace(')', ',0.0)').replace('rgb', 'rgba'));
+      grad.addColorStop(1, col.replace(')', ',0.06)').replace('rgb', 'rgba'));
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(sx, 0);
+      ctx.lineTo(ex - 80, floorY);
+      ctx.lineTo(ex + 80, floorY);
+      ctx.closePath();
+      ctx.fill();
+    };
+    drawSpot(W * 0.25, W * 0.38, 'rgb(255,200,50)');
+    drawSpot(W * 0.75, W * 0.62, 'rgb(180,100,255)');
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  HP BARS
+  // ════════════════════════════════════════════════════════════
+  function updateHPBars() {
+    const ah = $('sent-alien-hp');
+    const hh = $('sent-human-hp');
+    if (!alien || !human) return;
+
+    const alienPct = Math.max(0, alien.hp / alien.maxHP * 100);
+    const humanPct = Math.max(0, human.hp / human.maxHP * 100);
+
+    if (ah) {
+      ah.style.width      = alienPct + '%';
+      ah.style.background = alienPct > 50 ? '#17DD62' : alienPct > 25 ? '#FFD700' : '#FF2200';
+    }
+    if (hh) {
+      hh.style.width      = humanPct + '%';
+      hh.style.background = humanPct > 50 ? '#17DD62' : humanPct > 25 ? '#FFD700' : '#FF2200';
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  GAME LOOP
+  // ════════════════════════════════════════════════════════════
+  function startGameLoop() {
+    lastTime = performance.now();
+    function loop(ts) {
+      const dt = Math.min(ts - lastTime, 50); // cap at 50ms
+      lastTime = ts;
+
+      if (!canvas) return;
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      drawBackground(ctx, W, H);
+      if (alien) alien.update(dt);
+      if (human) human.update(dt);
+
+      // Floor shadow for fighters
+      const floorY = H * 0.75;
+
+      if (alien) alien.draw(ctx);
+      if (human) human.draw(ctx);
+
+      // Debug hitbox (disabled in production)
+      // if (alien?.hitActive && alien.hitbox) { ... }
+
+      animFrame = requestAnimationFrame(loop);
+    }
+    animFrame = requestAnimationFrame(loop);
+  }
+
+  function stopGameLoop() {
+    if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  SENTENCE GAME LOGIC
+  // ════════════════════════════════════════════════════════════
+
   function buildList(pool) {
     const result = [];
     while (result.length < WORD_TARGET) result.push(...shuffle([...pool]));
     return result.slice(0, WORD_TARGET);
   }
 
-  // ── Start ──────────────────────────────────────────────────
+  function setupCanvas() {
+    canvas = $('sent-arena-canvas');
+    if (!canvas) return;
+    const wrap = $('sent-arena-wrap');
+    if (wrap) {
+      canvas.width  = wrap.offsetWidth;
+      canvas.height = wrap.offsetHeight;
+    }
+    ctx = canvas.getContext('2d');
+  }
+
+  function setupFighters() {
+    if (!canvas) return;
+    const W = canvas.width, H = canvas.height;
+    const floorY = H * 0.75;
+    const fH     = Math.min(120, H * 0.48);
+    const fW     = fH * 0.65;
+
+    // Alien: left side, faces RIGHT
+    alien = new Fighter({
+      x:       W * 0.18,
+      y:       floorY - fH,
+      width:   fW,
+      height:  fH,
+      color:   '#3DD68C',   // green alien body
+      color2:  '#00FF88',   // brighter accent
+      facing:  'right',
+      name:    'ALIEN',
+      isAlien: true,
+    });
+
+    // Human: right side, faces LEFT
+    human = new Fighter({
+      x:       W * 0.72,
+      y:       floorY - fH,
+      width:   fW,
+      height:  fH,
+      color:   '#3498DB',   // blue fighter gi
+      color2:  '#8B4513',   // brown hair
+      facing:  'left',
+      name:    'HUMAN',
+      isAlien: false,
+    });
+  }
+
   function start() {
-    const sub  = App.state.selectedSubcategory;
-    sentences  = buildList(sub.sentences);
+    const sub = App.state.selectedSubcategory;
+    sentences    = buildList(sub.sentences);
     currentIndex = 0;
     score        = 0;
-    lives        = MAX_LIVES;
     wrongCount   = 0;
     secondsLeft  = MAX_SECONDS;
     active       = true;
-    animating    = false;
-    alienHP      = 100;
-    humanHP      = 100;
-    alienIdx     = 0;
-    humanIdx     = 0;
+    inputLocked  = false;
 
-    const d = dom();
-    d.btnQuit.onclick   = () => App.quitGame();
-    d.submitBtn.onclick = () => checkAnswer();
-    d.input.addEventListener('keydown', e => { if (e.key === 'Enter') checkAnswer(); });
+    const d = {
+      btnQuit:  $('sent-quit'),
+      submitBtn:$('sent-submit'),
+      input:    $('sent-input'),
+    };
+    if (d.btnQuit)   d.btnQuit.onclick   = () => App.quitGame();
+    if (d.submitBtn) d.submitBtn.onclick = () => checkAnswer();
+    if (d.input)     d.input.addEventListener('keydown', e => { if (e.key === 'Enter') checkAnswer(); });
 
-    // Set initial fighters
-    d.alienEl.textContent = ALIENS[0];
-    d.humanEl.textContent = HUMANS[0];
-    d.alienEl.style.transform = 'scaleX(-1)';  // alien faces right
-    d.humanEl.style.transform = 'scaleX(1)';   // human faces left (mirrored)
-
+    setupCanvas();
+    setupFighters();
+    startGameLoop();
     updateHPBars();
     updateTimerDisplay();
     startTimer();
     loadSentence();
-    d.input.focus();
-  }
-
-  // ── HP bars ────────────────────────────────────────────────
-  function updateHPBars() {
-    const d = dom();
-    if (d.alienHp) d.alienHp.style.width = Math.max(0, alienHP) + '%';
-    if (d.humanHp) d.humanHp.style.width = Math.max(0, humanHP) + '%';
-    // Colour shifts green→yellow→red
-    const alienColor = alienHP > 50 ? '#17DD62' : alienHP > 25 ? '#FFD700' : '#FF2200';
-    const humanColor = humanHP > 50 ? '#17DD62' : humanHP > 25 ? '#FFD700' : '#FF2200';
-    if (d.alienHp) d.alienHp.style.background = alienColor;
-    if (d.humanHp) d.humanHp.style.background = humanColor;
+    if (d.input) d.input.focus();
   }
 
   // ── Timer ──────────────────────────────────────────────────
@@ -128,415 +753,166 @@ const SentenceGame = (() => {
   function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
 
   function updateTimerDisplay() {
-    const d = dom();
-    if (!d.timerEl) return;
-    d.timerEl.textContent = App.formatTime(secondsLeft);
-    d.timerEl.style.color = secondsLeft <= 10 ? 'var(--redstone)' : 'var(--gold)';
+    const el = $('sent-timer');
+    if (!el) return;
+    el.textContent = App.formatTime(secondsLeft);
+    el.style.color = secondsLeft <= 10 ? 'var(--redstone)' : 'var(--gold)';
   }
 
   function timeUp() {
     active = false;
     stopTimer();
-    const d = dom();
-    if (d.feedback) { d.feedback.textContent = '⏰ Time is up!'; d.feedback.className = 'sent-feedback wrong'; }
-    if (d.input) d.input.disabled = true;
+    inputLocked = true;
+    const fb = $('sent-feedback');
+    if (fb) { fb.textContent = '⏰ Time is up!'; fb.className = 'sent-feedback wrong'; }
+    const inp = $('sent-input');
+    if (inp) inp.disabled = true;
     setTimeout(() => finishGame(false, true), 900);
   }
 
   // ── Load sentence ──────────────────────────────────────────
   function loadSentence() {
-    const d = dom();
+    const pb = $('sent-progress-bar');
+    const pt = $('sent-progress-text');
+    const sc = $('sent-score');
+    const se = $('sent-sentence');
+    const hi = $('sent-hint');
+    const tr = $('sent-transl');
+    const ip = $('sent-input');
+    const fb = $('sent-feedback');
+
     if (currentIndex >= sentences.length) { finishGame(true, false); return; }
     current = sentences[currentIndex];
 
-    const pct = Math.round((currentIndex / sentences.length) * 100);
-    d.progressBar.style.width  = pct + '%';
-    d.progressText.textContent = (currentIndex + 1) + ' / ' + sentences.length;
-    d.scoreEl.textContent      = score;
-
-    d.sentenceEl.innerHTML = current.sentence.replace('___',
-      '<span class="sent-blank">___</span>');
-    d.hintEl.textContent   = current.hint;
-    d.translEl.textContent = '(' + current.translation + ')';
-
-    d.input.value          = '';
-    d.input.disabled       = false;
-    d.feedback.textContent = '';
-    d.feedback.className   = 'sent-feedback';
-    d.input.focus();
+    if (pb) pb.style.width  = Math.round(currentIndex / sentences.length * 100) + '%';
+    if (pt) pt.textContent  = (currentIndex + 1) + ' / ' + sentences.length;
+    if (sc) sc.textContent  = score;
+    if (se) se.innerHTML    = current.sentence.replace('___', '<span class="sent-blank">___</span>');
+    if (hi) hi.textContent  = current.hint;
+    if (tr) tr.textContent  = '(' + current.translation + ')';
+    if (ip) { ip.value = ''; ip.disabled = false; }
+    if (fb) { fb.textContent = ''; fb.className = 'sent-feedback'; }
+    inputLocked = false;
+    if (ip) ip.focus();
   }
 
   // ── Check answer ───────────────────────────────────────────
+  const PUNCH_LABELS = ['POW!','WHAM!','SMASH!','CRACK!','BAM!','HIT!','KICK!','COMBO!'];
+
   function checkAnswer() {
-    if (!active || animating) return;
-    const d     = dom();
-    const typed = d.input.value.trim();
+    if (!active || inputLocked) return;
+    const ip    = $('sent-input');
+    const fb    = $('sent-feedback');
+    const se    = $('sent-sentence');
+    const typed = ip ? ip.value.trim() : '';
     if (!typed) return;
 
     if (typed.toLowerCase() === current.answer.toLowerCase()) {
-      // ── CORRECT: human attacks alien ──
+      // ── CORRECT ─────────────────────────────────────────
       score += PTS_CORRECT;
-      d.scoreEl.textContent  = score;
-      d.feedback.textContent = '✓ Correct!';
-      d.feedback.className   = 'sent-feedback correct';
-      d.sentenceEl.innerHTML = current.sentence.replace('___',
+      if ($('sent-score')) $('sent-score').textContent = score;
+      if (fb) { fb.textContent = '✓ Correct!'; fb.className = 'sent-feedback correct'; }
+      if (se) se.innerHTML = current.sentence.replace('___',
         '<span class="sent-answer-fill">' + current.answer + '</span>');
-      d.input.disabled = true;
+      if (ip) ip.disabled = true;
+      inputLocked = true;
 
-      // Damage alien
-      const dmg = Math.floor(100 / sentences.length) + 2;
-      alienHP = Math.max(0, alienHP - dmg);
+      // Damage alien HP
+      const hpPerSentence = 100 / sentences.length;
+      alien.hp = Math.max(0, alien.hp - hpPerSentence);
+      updateHPBars();
 
-      animating = true;
-      animHumanAttack(() => {
-        updateHPBars();
-        animating = false;
+      // Human attacks alien
+      triggerAttack(human, alien, () => {
         currentIndex++;
-        setTimeout(() => loadSentence(), 300);
+        setTimeout(() => loadSentence(), 200);
       });
 
     } else {
-      // ── WRONG: alien attacks human ──
+      // ── WRONG ────────────────────────────────────────────
       wrongCount++;
-      d.feedback.textContent = '✗ Try again!';
-      d.feedback.className   = 'sent-feedback wrong';
-
-      // Shake input
-      d.input.classList.remove('sent-shake');
-      void d.input.offsetWidth;
-      d.input.classList.add('sent-shake');
-      d.input.value = '';
+      if (fb) { fb.textContent = '✗ Try again!'; fb.className = 'sent-feedback wrong'; }
+      if (ip) {
+        ip.classList.remove('sent-shake');
+        void ip.offsetWidth;
+        ip.classList.add('sent-shake');
+        ip.value = '';
+      }
 
       // Damage human HP
-      const hpPerHit = Math.floor(100 / MAX_LIVES);
-      humanHP = Math.max(0, humanHP - hpPerHit);
+      const hpPerHit = Math.floor(100 / MAX_WRONG);
+      human.hp = Math.max(0, human.hp - hpPerHit);
+      updateHPBars();
 
-      animating = true;
-      animAlienAttack(() => {
-        updateHPBars();
-        animating = false;
-
-        if (wrongCount >= MAX_LIVES) {
+      inputLocked = true;
+      triggerAttack(alien, human, () => {
+        inputLocked = false;
+        if (wrongCount >= MAX_WRONG) {
           // Human KO
-          animKO('human', () => finishGame(false, false));
+          human.setState('death');
+          setTimeout(() => finishGame(false, false), 1200);
         } else {
-          setTimeout(() => d.input.focus(), 50);
+          if (ip) ip.focus();
         }
       });
     }
   }
 
-  // ──────────────────────────────────────────────────────────
-  //  ANIMATIONS
-  // ──────────────────────────────────────────────────────────
+  // ── Trigger an attack sequence ─────────────────────────────
+  function triggerAttack(attacker, defender, cb) {
+    attacker.setState('attack');
+    attacker.frameDur = 55; // speed up attack animation
 
-  // Human steps toward alien, punches, steps back
-  function animHumanAttack(cb) {
-    const d = dom();
-    const humanWrap = $('sent-human-wrap');
-    const alienEl   = d.alienEl;
-    if (!humanWrap || !alienEl) { cb && cb(); return; }
-
-    const attack = ATTACKS[Math.floor(Math.random() * ATTACKS.length)];
-
-    // Step toward alien (move left)
-    humanWrap.style.transition = 'transform 0.18s ease-out';
-    humanWrap.style.transform  = 'translateX(-55px)';
+    // When hit frame fires, we detect it from the fighter update
+    // Instead, we use a timeout timed to the hitFrame
+    const hitDelay = attacker.hitFrame * attacker.frameDur;
 
     setTimeout(() => {
-      // Hit flash on alien
-      alienEl.style.transition = 'filter 0.08s, transform 0.08s';
-      alienEl.style.filter     = 'brightness(5) saturate(0)';
-      alienEl.style.transform  = 'scaleX(-1) translateX(18px) scale(1.3)';
+      // Spawn hit particles on defender
+      const hx = attacker.facing === 'right' ? defender.x : defender.x + defender.width;
+      const hy = defender.y + defender.height * 0.35;
+      attacker.spawnHitParticles(hx, hy);
 
-      // Hit effect on canvas
-      spawnHitEffect('alien', attack, '#44AAFF');
+      // Show hit label at impact
+      const label = PUNCH_LABELS[Math.floor(Math.random() * PUNCH_LABELS.length)];
+      attacker.showHitLabel(label, hx, hy - 20);
 
-      setTimeout(() => {
-        alienEl.style.filter     = '';
-        alienEl.style.transform  = 'scaleX(-1) scale(1)';
-
-        // Step back
-        humanWrap.style.transition = 'transform 0.2s cubic-bezier(0.34,1.4,0.64,1)';
-        humanWrap.style.transform  = 'translateX(0)';
-
-        setTimeout(() => { cb && cb(); }, 220);
-      }, 130);
-    }, 190);
-  }
-
-  // Alien steps toward human, hits, steps back
-  function animAlienAttack(cb) {
-    const d = dom();
-    const alienWrap = $('sent-alien-wrap');
-    const humanEl   = d.humanEl;
-    if (!alienWrap || !humanEl) { cb && cb(); return; }
-
-    const attack = ATTACKS[Math.floor(Math.random() * ATTACKS.length)];
-
-    // Step toward human (move right)
-    alienWrap.style.transition = 'transform 0.18s ease-out';
-    alienWrap.style.transform  = 'translateX(55px)';
-
-    setTimeout(() => {
-      // Hit flash on human
-      humanEl.style.transition = 'filter 0.08s, transform 0.08s';
-      humanEl.style.filter     = 'brightness(5) hue-rotate(300deg)';
-      humanEl.style.transform  = 'scaleX(1) translateX(-18px) scale(1.3)';
-
-      // Hit effect on canvas
-      spawnHitEffect('human', attack, '#FF3300');
+      // Defender reacts
+      defender.setState('hurt');
+      defender.hurtTimer = 400;
 
       setTimeout(() => {
-        humanEl.style.filter    = '';
-        humanEl.style.transform = 'scaleX(1) scale(1)';
-
-        // Step back
-        alienWrap.style.transition = 'transform 0.2s cubic-bezier(0.34,1.4,0.64,1)';
-        alienWrap.style.transform  = 'translateX(0)';
-
-        setTimeout(() => { cb && cb(); }, 220);
-      }, 130);
-    }, 190);
-  }
-
-  // KO animation: loser staggers, flies off screen, canvas big explosion
-  function animKO(who, cb) {
-    const el   = who === 'alien' ? $('sent-alien')   : $('sent-human');
-    const wrap = who === 'alien' ? $('sent-alien-wrap') : $('sent-human-wrap');
-    if (!el || !wrap) { cb && cb(); return; }
-
-    // Stagger shake
-    el.style.transition = 'transform 0.1s steps(2)';
-    el.style.transform  = (who === 'alien' ? 'scaleX(-1) ' : '') + 'translateX(12px) scale(1.2)';
-
-    setTimeout(() => {
-      el.style.transform = (who === 'alien' ? 'scaleX(-1) ' : '') + 'translateX(-12px) scale(1.2)';
-      setTimeout(() => {
-        // Fly off and spin
-        const dir = who === 'alien' ? -1 : 1;
-        wrap.style.transition = 'transform 0.6s cubic-bezier(0.4,0,1,1), opacity 0.6s ease';
-        wrap.style.transform  = `translateX(${dir * 300}px) translateY(-60px) rotate(${dir * 360}deg)`;
-        wrap.style.opacity    = '0';
-
-        // Big KO explosion
-        const xPct = who === 'alien' ? 28 : 72;
-        spawnKOExplosion(xPct, who === 'alien'
-          ? ['#9C27B0','#E040FB','#FFD700','#FF6F00']
-          : ['#2196F3','#40C4FF','#FFFFFF','#FF3D00']);
-
-        setTimeout(() => { cb && cb(); }, 700);
-      }, 110);
-    }, 110);
-  }
-
-  // ── Canvas: hit spark effect ───────────────────────────────
-  function spawnHitEffect(target, label, color) {
-    const d      = dom();
-    const canvas = d.canvas;
-    const wrap   = d.arenaWrap;
-    if (!canvas || !wrap) return;
-
-    canvas.width  = wrap.offsetWidth;
-    canvas.height = wrap.offsetHeight;
-    const ctx     = canvas.getContext('2d');
-
-    // Position: near the target fighter (alien~28%, human~72%)
-    const xPct   = target === 'alien' ? 0.30 : 0.70;
-    const cx     = canvas.width  * xPct;
-    const cy     = canvas.height * 0.52;
-
-    // Spark particles
-    const particles = [];
-    for (let i = 0; i < 18; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 2 + Math.random() * 5;
-      particles.push({
-        x: cx, y: cy,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 1.5,
-        r: 3 + Math.random() * 5,
-        life: 1,
-        decay: 0.06 + Math.random() * 0.06,
-        color,
-      });
-    }
-
-    // Attack label
-    let labelLife  = 1;
-    const labelX   = cx + (target === 'alien' ? -20 : 20);
-    let   labelY   = cy - 20;
-
-    function frame() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Sparks
-      let any = false;
-      for (const p of particles) {
-        if (p.life <= 0) continue;
-        any = true;
-        p.x    += p.vx; p.y += p.vy; p.vy += 0.15;
-        p.life -= p.decay;
-        ctx.globalAlpha = Math.max(0, p.life);
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, Math.max(0.5, p.r * p.life), 0, Math.PI * 2);
-        ctx.fillStyle = p.color;
-        ctx.fill();
-      }
-
-      // Hit label (e.g. "POW!")
-      if (labelLife > 0) {
-        any = true;
-        labelY  -= 0.8;
-        labelLife -= 0.04;
-        ctx.globalAlpha = Math.max(0, labelLife);
-        ctx.font        = 'bold 20px "Press Start 2P", monospace';
-        ctx.fillStyle   = '#FFFFFF';
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth   = 4;
-        ctx.textAlign   = 'center';
-        ctx.strokeText(label, labelX, labelY);
-        ctx.fillText(label, labelX, labelY);
-      }
-
-      ctx.globalAlpha = 1;
-
-      if (any) {
-        requestAnimationFrame(frame);
-      } else {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-      }
-    }
-    requestAnimationFrame(frame);
-  }
-
-  // ── Canvas: big KO explosion ───────────────────────────────
-  function spawnKOExplosion(xPct, colours) {
-    const d      = dom();
-    const canvas = d.canvas;
-    const wrap   = d.arenaWrap;
-    if (!canvas || !wrap) return;
-
-    canvas.width  = wrap.offsetWidth;
-    canvas.height = wrap.offsetHeight;
-    const ctx     = canvas.getContext('2d');
-    const cx      = canvas.width  * (xPct / 100);
-    const cy      = canvas.height * 0.52;
-
-    const particles = [];
-    for (let i = 0; i < 70; i++) {
-      const angle = (Math.PI * 2 * i / 70) + (Math.random() - 0.5) * 0.4;
-      const speed = 2 + Math.random() * 7;
-      particles.push({
-        x: cx, y: cy,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 3,
-        r: 4 + Math.random() * 9,
-        life: 1,
-        decay: 0.018 + Math.random() * 0.022,
-        color: colours[Math.floor(Math.random() * colours.length)],
-        square: Math.random() > 0.5,
-      });
-    }
-    for (let i = 0; i < 30; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 3 + Math.random() * 9;
-      particles.push({ x:cx, y:cy, vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed-4,
-        r:2+Math.random()*3, life:1, decay:0.03+Math.random()*0.03, color:'#FFFFFF', square:false });
-    }
-
-    // "KO!" text
-    let koLife = 1;
-    let koY    = cy - 30;
-
-    let ringR = 0, ringLife = 1;
-
-    function frame() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Shockwave
-      if (ringLife > 0) {
-        ringR   += 11; ringLife -= 0.045;
-        [ringR, ringR-20, ringR-38].forEach((r, i) => {
-          if (r <= 0) return;
-          ctx.beginPath();
-          ctx.arc(cx, cy, r, 0, Math.PI*2);
-          ctx.strokeStyle = `rgba(255,${180-i*40},80,${Math.max(0,ringLife-i*0.15)*0.85})`;
-          ctx.lineWidth = 4 - i;
-          ctx.stroke();
-        });
-      }
-
-      // KO label
-      if (koLife > 0) {
-        koY    -= 1;
-        koLife -= 0.025;
-        const scale = 1 + (1 - koLife) * 0.5;
-        ctx.globalAlpha = Math.max(0, koLife);
-        ctx.save();
-        ctx.translate(cx, koY);
-        ctx.scale(scale, scale);
-        ctx.font        = 'bold 36px "Press Start 2P", monospace';
-        ctx.textAlign   = 'center';
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth   = 6;
-        ctx.strokeText('K.O.!', 0, 0);
-        ctx.fillStyle   = '#FFD700';
-        ctx.fillText('K.O.!', 0, 0);
-        ctx.restore();
-      }
-
-      let any = ringLife > 0 || koLife > 0;
-      for (const p of particles) {
-        if (p.life <= 0) continue;
-        any = true;
-        p.x += p.vx; p.y += p.vy; p.vy += 0.25; p.vx *= 0.97; p.life -= p.decay;
-        ctx.globalAlpha = Math.max(0, p.life);
-        if (p.square) {
-          const s = Math.max(1, p.r * p.life);
-          ctx.fillStyle = p.color;
-          ctx.fillRect(p.x-s/2, p.y-s/2, s, s);
-        } else {
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, Math.max(0.5, p.r*p.life), 0, Math.PI*2);
-          ctx.fillStyle = p.color;
-          ctx.fill();
-        }
-      }
-      ctx.globalAlpha = 1;
-
-      if (any) requestAnimationFrame(frame);
-      else ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-    requestAnimationFrame(frame);
+        attacker.frameDur = 80; // restore speed
+        attacker.setState('idle');
+        setTimeout(() => cb && cb(), 200);
+      }, 300);
+    }, hitDelay);
   }
 
   // ── Finish ─────────────────────────────────────────────────
   function finishGame(completed, timedOut) {
     active = false;
     stopTimer();
+    inputLocked = true;
 
-    // Determine win/lose
-    const won = completed || (currentIndex >= sentences.length && wrongCount < MAX_LIVES);
+    const won = completed;
 
     if (won) {
-      // Human wins: alien KO
-      animating = true;
-      animKO('alien', () => {
-        animating = false;
-        saveAndShowResult(true, timedOut);
-      });
-    } else {
-      // Alien wins: human KO (only if not already done)
-      if (!timedOut && wrongCount >= MAX_LIVES) {
-        saveAndShowResult(false, false);
-      } else {
-        saveAndShowResult(false, timedOut);
-      }
+      // Alien gets KO'd
+      alien.setState('death');
+      human.setState('victory');
+      // Big explosion on alien
+      setTimeout(() => {
+        alien.spawnHitParticles(alien.x + alien.width/2, alien.y + alien.height/2);
+        alien.spawnHitParticles(alien.x + alien.width/2, alien.y + alien.height/2);
+        alien.spawnHitParticles(alien.x + alien.width/2, alien.y + alien.height/2);
+        alien.showHitLabel('K.O.!', alien.x + alien.width/2, alien.y - 10);
+      }, 200);
+    } else if (!timedOut) {
+      // Human got KO'd (already set above)
+      alien.setState('victory');
     }
-  }
 
-  function saveAndShowResult(won, timedOut) {
     const bonusPoints = won ? secondsLeft * PTS_BONUS_PER_SEC : 0;
     const finalScore  = score + bonusPoints;
     const elapsed     = MAX_SECONDS - secondsLeft;
@@ -552,18 +928,18 @@ const SentenceGame = (() => {
       date:        new Date().toLocaleDateString('nl-NL'),
     });
 
-    setTimeout(() => showResult(won, timedOut, finalScore, bonusPoints, elapsed), 800);
+    setTimeout(() => showResult(won, timedOut, finalScore, bonusPoints, elapsed), 1500);
   }
 
   function showResult(won, timedOut, finalScore, bonusPoints, elapsed) {
+    stopGameLoop();
     $('sent-container').innerHTML = `
       <div class="result-screen">
         <div class="result-icon">${won ? '🏆' : '💀'}</div>
         <div class="result-title">${won ? 'VICTORY!' : timedOut ? 'TIME UP!' : 'K.O.!'}</div>
         <div class="result-subtitle">${won
-          ? 'The alien is defeated! You completed all sentences!' + (bonusPoints ? ' Bonus: +' + bonusPoints + ' pts' : '')
-          : timedOut ? 'The clock ran out!'
-          : 'The alien got 3 hits in — you were knocked out!'}</div>
+          ? 'Alien defeated! All sentences complete!' + (bonusPoints ? ' Bonus: +' + bonusPoints + ' pts' : '')
+          : timedOut ? 'Clock ran out!' : 'Three hits taken — knocked out!'}</div>
         <div class="result-stats">
           <div class="result-stat"><div class="result-stat-value">${finalScore}</div><div class="result-stat-label">Score</div></div>
           <div class="result-stat"><div class="result-stat-value">${App.formatTime(elapsed)}</div><div class="result-stat-label">Time</div></div>
@@ -582,14 +958,13 @@ const SentenceGame = (() => {
 
   // ── Reset ──────────────────────────────────────────────────
   function reset() {
-    active = animating = false;
+    active = inputLocked = false;
     stopTimer();
+    stopGameLoop();
     sentences = []; currentIndex = 0; current = null;
     score = wrongCount = 0; secondsLeft = MAX_SECONDS;
-    lives = MAX_LIVES; alienHP = humanHP = 100;
-
-    const canvas = $('sent-arena-canvas');
-    if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+    alien = null; human = null;
+    canvas = null; ctx = null;
 
     const c = $('sent-container');
     if (c && !$('sent-input')) c.innerHTML = sentOriginalHTML;

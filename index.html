@@ -268,7 +268,7 @@
 
 
   <!-- ==========================================================
-       MISSING WORD GAME
+       MISSING WORD GAME  —  Street Fighter arena
        ========================================================== -->
   <div class="page" id="page-sentence">
     <div id="sent-container">
@@ -281,39 +281,149 @@
         <button class="btn-quit" id="sent-quit">Quit</button>
       </div>
 
+      <!-- Fighter health bars -->
+      <div class="fight-healthbars">
+        <!-- Alien HP left -->
+        <div class="fight-hb-wrap fight-hb-left">
+          <div class="fight-hb-name">ALIEN</div>
+          <div class="fight-hb-outer">
+            <div class="fight-hb-fill fight-hb-alien" id="sent-alien-hp"></div>
+          </div>
+        </div>
+        <!-- VS -->
+        <div class="fight-vs">VS</div>
+        <!-- Human HP right -->
+        <div class="fight-hb-wrap fight-hb-right">
+          <div class="fight-hb-name">HUMAN</div>
+          <div class="fight-hb-outer">
+            <div class="fight-hb-fill fight-hb-human" id="sent-human-hp"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Arena scene -->
+      <div class="sent-arena-wrap" id="sent-arena-wrap">
+
+        <!-- SVG background: Minecraft-style arena floor + crowd -->
+        <svg class="sent-arena-svg" viewBox="0 0 800 240" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <!-- Sky gradient: sunset -->
+          <defs>
+            <linearGradient id="arenaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stop-color="#2B0038"/>
+              <stop offset="55%"  stop-color="#7B1FA2"/>
+              <stop offset="100%" stop-color="#FF6F00"/>
+            </linearGradient>
+            <linearGradient id="floorGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stop-color="#4A148C"/>
+              <stop offset="100%" stop-color="#1A0028"/>
+            </linearGradient>
+          </defs>
+          <rect width="800" height="240" fill="url(#arenaGrad)"/>
+
+          <!-- Stars -->
+          <circle cx="30"  cy="18" r="1.5" fill="#fff" opacity="0.9"/>
+          <circle cx="100" cy="10" r="1"   fill="#fff" opacity="0.7"/>
+          <circle cx="200" cy="22" r="1.5" fill="#fff" opacity="0.8"/>
+          <circle cx="350" cy="8"  r="1"   fill="#fff" opacity="0.6"/>
+          <circle cx="500" cy="18" r="1.5" fill="#fff" opacity="0.9"/>
+          <circle cx="640" cy="12" r="1"   fill="#fff" opacity="0.7"/>
+          <circle cx="750" cy="20" r="1.5" fill="#fff" opacity="0.8"/>
+          <circle cx="430" cy="30" r="1"   fill="#fff" opacity="0.5"/>
+
+          <!-- Moon -->
+          <circle cx="700" cy="35" r="20" fill="#FFFDE0" opacity="0.9"/>
+          <circle cx="710" cy="28" r="16" fill="#7B1FA2" opacity="0.7"/>
+
+          <!-- Pixel crowd silhouettes -->
+          <!-- row of heads -->
+          <rect x="0"   y="130" width="800" height="40" fill="#1A0028" opacity="0.6"/>
+          <!-- individual crowd heads -->
+          <rect x="10"  y="118" width="14" height="16" fill="#4A148C"/>
+          <rect x="34"  y="114" width="14" height="20" fill="#6A1B9A"/>
+          <rect x="58"  y="120" width="14" height="14" fill="#4A148C"/>
+          <rect x="80"  y="112" width="16" height="22" fill="#880E4F"/>
+          <rect x="106" y="118" width="14" height="16" fill="#4A148C"/>
+          <rect x="130" y="116" width="14" height="18" fill="#6A1B9A"/>
+          <rect x="154" y="120" width="14" height="14" fill="#880E4F"/>
+          <rect x="178" y="114" width="16" height="20" fill="#4A148C"/>
+          <rect x="202" y="118" width="14" height="16" fill="#6A1B9A"/>
+          <rect x="226" y="112" width="14" height="22" fill="#4A148C"/>
+          <rect x="250" y="120" width="14" height="14" fill="#880E4F"/>
+          <rect x="274" y="116" width="14" height="18" fill="#6A1B9A"/>
+          <!-- gap for the fighters in the middle -->
+          <rect x="540" y="118" width="14" height="16" fill="#4A148C"/>
+          <rect x="564" y="114" width="14" height="20" fill="#6A1B9A"/>
+          <rect x="588" y="120" width="14" height="14" fill="#880E4F"/>
+          <rect x="612" y="112" width="16" height="22" fill="#4A148C"/>
+          <rect x="636" y="118" width="14" height="16" fill="#6A1B9A"/>
+          <rect x="660" y="116" width="14" height="18" fill="#4A148C"/>
+          <rect x="684" y="120" width="14" height="14" fill="#880E4F"/>
+          <rect x="708" y="114" width="16" height="20" fill="#4A148C"/>
+          <rect x="732" y="118" width="14" height="16" fill="#6A1B9A"/>
+          <rect x="756" y="112" width="14" height="22" fill="#4A148C"/>
+          <rect x="780" y="120" width="14" height="14" fill="#880E4F"/>
+
+          <!-- Arena floor blocks (Minecraft stone/purple) -->
+          <rect x="0"   y="170" width="800" height="70" fill="#2D2040"/>
+          <!-- floor tile lines -->
+          <rect x="0"   y="170" width="800" height="6"  fill="#3D3060"/>
+          <rect x="0"   y="178" width="800" height="2"  fill="#1A1030"/>
+          <!-- tile grid -->
+          <rect x="80"  y="170" width="3"   height="70" fill="#1A1030" opacity="0.4"/>
+          <rect x="160" y="170" width="3"   height="70" fill="#1A1030" opacity="0.4"/>
+          <rect x="240" y="170" width="3"   height="70" fill="#1A1030" opacity="0.4"/>
+          <rect x="320" y="170" width="3"   height="70" fill="#1A1030" opacity="0.4"/>
+          <rect x="400" y="170" width="3"   height="70" fill="#1A1030" opacity="0.4"/>
+          <rect x="480" y="170" width="3"   height="70" fill="#1A1030" opacity="0.4"/>
+          <rect x="560" y="170" width="3"   height="70" fill="#1A1030" opacity="0.4"/>
+          <rect x="640" y="170" width="3"   height="70" fill="#1A1030" opacity="0.4"/>
+          <rect x="720" y="170" width="3"   height="70" fill="#1A1030" opacity="0.4"/>
+          <rect x="0"   y="205" width="800" height="2"  fill="#1A1030" opacity="0.4"/>
+          <!-- centre line -->
+          <rect x="398" y="170" width="4"   height="70" fill="#FFD700" opacity="0.3"/>
+          <!-- spotlight left -->
+          <polygon points="320,0 200,170 440,170" fill="#FFD700" opacity="0.04"/>
+          <!-- spotlight right -->
+          <polygon points="480,0 360,170 600,170" fill="#9C27B0" opacity="0.04"/>
+        </svg>
+
+        <!-- Canvas for hit effects -->
+        <canvas id="sent-arena-canvas" class="sent-arena-canvas"></canvas>
+
+        <!-- Fighters — alien LEFT, human RIGHT, both centered in arena -->
+        <div class="sent-fighters">
+          <div class="sent-fighter-wrap" id="sent-alien-wrap">
+            <div class="sent-fighter-label">ALIEN</div>
+            <div class="sent-fighter" id="sent-alien">👽</div>
+          </div>
+          <div class="sent-fighter-wrap" id="sent-human-wrap">
+            <div class="sent-fighter-label">HUMAN</div>
+            <div class="sent-fighter" id="sent-human">🧙</div>
+          </div>
+        </div>
+
+      </div><!-- end arena -->
+
       <!-- Progress bar -->
-      <div class="fill-progress">
+      <div class="fill-progress" style="margin-top:0.5rem">
         <div class="fill-progress-bar" id="sent-progress-bar" style="width:0%"></div>
       </div>
 
       <!-- Card -->
       <div class="sent-card">
-        <!-- Dutch hint sentence -->
         <div class="sent-hint-label">Dutch sentence (hint)</div>
         <div class="sent-hint-row">
           <span id="sent-hint" class="sent-hint-text"></span>
           <span id="sent-transl" class="sent-transl"></span>
         </div>
-
-        <!-- Foreign sentence with gap -->
         <div class="sent-sentence-label">Complete the sentence</div>
         <div class="sent-sentence" id="sent-sentence"></div>
-
-        <!-- Input row -->
         <div class="sent-input-row">
-          <input
-            type="text"
-            id="sent-input"
-            class="sent-input"
-            maxlength="40"
-            autocomplete="off"
-            autocorrect="off"
-            spellcheck="false"
-            placeholder="type the missing word…"
-          />
+          <input type="text" id="sent-input" class="sent-input" maxlength="40"
+            autocomplete="off" autocorrect="off" spellcheck="false"
+            placeholder="type the missing word…"/>
           <button class="btn-primary" id="sent-submit">OK</button>
         </div>
-
         <div class="sent-feedback" id="sent-feedback"></div>
       </div>
 

@@ -278,7 +278,7 @@ const App = (() => {
     tbody.innerHTML = filtered.slice(0, 50).map((s, i) => `
       <tr class="${i < 3 ? 'rank-'+(i+1) : ''}">
         <td>${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i+1}</td>
-        <td style="color:var(--accent-light);font-weight:600">${s.player || '—'}</td>
+        <td style="color:var(--sand);font-weight:600">${s.player || '—'}</td>
         <td class="score-val">${s.score}</td>
         <td>${labels[s.game] || s.game}</td>
         <td>${s.language}</td>

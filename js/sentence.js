@@ -75,6 +75,12 @@ const SentenceGame = (() => {
 
       // Walk bob
       this.bobT = 0;
+
+      // Walk-to target (set externally to trigger smooth movement)
+      this.restX      = this.x;    // set after construction
+      this.walkTarget = null;      // null = not walking
+      this.walkSpeed  = 0;
+      this.onArrival  = null;      // callback when walkTarget reached
     }
 
     // ── Idle animation frames ────────────────────────────────
@@ -104,6 +110,23 @@ const SentenceGame = (() => {
       this.bobT += dt * 0.004;
 
       if (this.hurtTimer > 0) this.hurtTimer -= dt;
+
+      // Smooth walk toward walkTarget
+      if (this.walkTarget !== null && this.state !== 'attack' &&
+          this.state !== 'hurt' && this.state !== 'death') {
+        const dist = this.walkTarget - this.x;
+        const step = this.walkSpeed * dt * 0.06;
+        if (Math.abs(dist) <= Math.max(step, 1.5)) {
+          this.x = this.walkTarget;
+          this.walkTarget = null;
+          this.walkSpeed  = 0;
+          if (this.state === 'walk') this.setState('idle');
+          if (this.onArrival) { const fn = this.onArrival; this.onArrival = null; fn(); }
+        } else {
+          this.x += Math.sign(dist) * step;
+          if (this.state !== 'walk') this.setState('walk');
+        }
+      }
 
       this.frameT += dt;
       if (this.frameT >= this.frameDur) {
@@ -710,29 +733,31 @@ const SentenceGame = (() => {
 
     // Alien: left side, faces RIGHT
     alien = new Fighter({
-      x:       W * 0.18,
+      x:       W * 0.12,
       y:       floorY - fH,
       width:   fW,
       height:  fH,
-      color:   '#3DD68C',   // green alien body
-      color2:  '#00FF88',   // brighter accent
+      color:   '#3DD68C',
+      color2:  '#00FF88',
       facing:  'right',
       name:    'ALIEN',
       isAlien: true,
     });
+    alien.restX = W * 0.12;   // home position
 
     // Human: right side, faces LEFT
     human = new Fighter({
-      x:       W * 0.72,
+      x:       W * 0.76 - fW,
       y:       floorY - fH,
       width:   fW,
       height:  fH,
-      color:   '#3498DB',   // blue fighter gi
-      color2:  '#8B4513',   // brown hair
+      color:   '#3498DB',
+      color2:  '#8B4513',
       facing:  'left',
       name:    'HUMAN',
       isAlien: false,
     });
+    human.restX = W * 0.76 - fW;  // home position
   }
 
   function start() {
@@ -887,34 +912,53 @@ const SentenceGame = (() => {
   }
 
   // ── Trigger an attack sequence ─────────────────────────────
+  // Walk the attacker close to the defender, punch, then walk back home
   function triggerAttack(attacker, defender, cb) {
-    attacker.setState('attack');
-    attacker.frameDur = 55; // speed up attack animation
+    // Step 1: walk attacker to striking distance
+    const gap      = 8;   // pixels gap between fighters when in contact
+    const strikeX  = attacker.facing === 'right'
+      ? defender.x - attacker.width - gap
+      : defender.x + defender.width + gap;
 
-    // When hit frame fires, we detect it from the fighter update
-    // Instead, we use a timeout timed to the hitFrame
-    const hitDelay = attacker.hitFrame * attacker.frameDur;
+    attacker.walkTarget = strikeX;
+    attacker.walkSpeed  = 320;   // px per second (fast charge)
+    attacker.setState('walk');
 
-    setTimeout(() => {
-      // Spawn hit particles on defender
-      const hx = attacker.facing === 'right' ? defender.x : defender.x + defender.width;
-      const hy = defender.y + defender.height * 0.35;
-      attacker.spawnHitParticles(hx, hy);
+    attacker.onArrival = () => {
+      // Step 2: attack
+      attacker.setState('attack');
+      attacker.frameDur = 55;
 
-      // Show hit label at impact
-      const label = PUNCH_LABELS[Math.floor(Math.random() * PUNCH_LABELS.length)];
-      attacker.showHitLabel(label, hx, hy - 20);
-
-      // Defender reacts
-      defender.setState('hurt');
-      defender.hurtTimer = 400;
-
+      const hitDelay = attacker.hitFrame * attacker.frameDur;
       setTimeout(() => {
-        attacker.frameDur = 80; // restore speed
-        attacker.setState('idle');
-        setTimeout(() => cb && cb(), 200);
-      }, 300);
-    }, hitDelay);
+        // Impact point on defender body
+        const hx = attacker.facing === 'right'
+          ? defender.x + 10
+          : defender.x + defender.width - 10;
+        const hy = defender.y + defender.height * 0.32;
+
+        attacker.spawnHitParticles(hx, hy);
+        const label = PUNCH_LABELS[Math.floor(Math.random() * PUNCH_LABELS.length)];
+        attacker.showHitLabel(label, hx + (attacker.facing === 'right' ? 30 : -30), hy - 24);
+
+        // Defender hurt
+        defender.setState('hurt');
+        defender.hurtTimer = 500;
+
+        setTimeout(() => {
+          // Step 3: walk attacker back home
+          attacker.frameDur   = 80;
+          attacker.walkTarget = attacker.restX;
+          attacker.walkSpeed  = 240;   // walk back a bit slower
+          attacker.setState('walk');
+
+          attacker.onArrival = () => {
+            attacker.setState('idle');
+            cb && cb();
+          };
+        }, 320);
+      }, hitDelay);
+    };
   }
 
   // ── Finish ─────────────────────────────────────────────────

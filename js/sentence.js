@@ -630,7 +630,15 @@ const SentenceGame = (() => {
       lastTime = ts;
 
       if (!canvas) return;
+
+      // Sync canvas pixel size to its CSS-rendered size every frame
+      resizeCanvas();
+
+      // If fighters were placed with zero dimensions, re-place them
+      if (alien && alien.width < 1) setupFighters();
+
       const W = canvas.width, H = canvas.height;
+      if (W < 10 || H < 10) { animFrame = requestAnimationFrame(loop); return; }
       ctx.clearRect(0, 0, W, H);
 
       drawBackground(ctx, W, H);
@@ -668,17 +676,34 @@ const SentenceGame = (() => {
   function setupCanvas() {
     canvas = $('sent-arena-canvas');
     if (!canvas) return;
-    const wrap = $('sent-arena-wrap');
-    if (wrap) {
-      canvas.width  = wrap.offsetWidth;
-      canvas.height = wrap.offsetHeight;
-    }
     ctx = canvas.getContext('2d');
+    resizeCanvas();
+  }
+
+  function resizeCanvas() {
+    if (!canvas) return;
+    const wrap = $('sent-arena-wrap');
+    let W = 800, H = 300;
+    if (wrap) {
+      const r = wrap.getBoundingClientRect();
+      if (r.width  > 10) W = Math.floor(r.width);
+      if (r.height > 10) H = Math.floor(r.height);
+      // fallback: offsetWidth
+      if (W < 10) W = wrap.offsetWidth  || 800;
+      if (H < 10) H = wrap.offsetHeight || 300;
+    }
+    // Only resize if dimensions actually changed (avoids clearing mid-frame)
+    if (canvas.width !== W || canvas.height !== H) {
+      canvas.width  = W;
+      canvas.height = H;
+    }
   }
 
   function setupFighters() {
     if (!canvas) return;
-    const W = canvas.width, H = canvas.height;
+    resizeCanvas();   // ensure canvas has real pixel dimensions before placing fighters
+    const W = canvas.width  || 800;
+    const H = canvas.height || 300;
     const floorY = H * 0.75;
     const fH     = Math.min(120, H * 0.48);
     const fW     = fH * 0.65;
@@ -729,9 +754,12 @@ const SentenceGame = (() => {
     if (d.submitBtn) d.submitBtn.onclick = () => checkAnswer();
     if (d.input)     d.input.addEventListener('keydown', e => { if (e.key === 'Enter') checkAnswer(); });
 
-    setupCanvas();
-    setupFighters();
-    startGameLoop();
+    // Defer canvas setup to next paint so the arena div has real dimensions
+    requestAnimationFrame(() => {
+      setupCanvas();
+      setupFighters();
+      startGameLoop();
+    });
     updateHPBars();
     updateTimerDisplay();
     startTimer();

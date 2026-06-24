@@ -9,7 +9,7 @@
         {
           "id": "marche19",
           "name": "Marche19",
-          "questions": [
+          "words": [
             { "question": "je bricole", "answer": "ik knutsel"},
             { "question": "bricoler", "answer": "knutselen"},
             { "question": "on achète", "answer": "men koopt"},
@@ -40,7 +40,7 @@
         {
           "id": "marche20",
           "name": "Marche20",
-          "questions": [
+          "words": [
             { "question": "je dors", "answer": "ik slaap"},
             { "question": "dormir", "answer": "slapen"},
             { "question": "il vaut", "answer": "het is waard"},
@@ -78,7 +78,7 @@
         {
           "id": "food",
           "name": "Food",
-          "questions": [
+          "words": [
             { "question": "Pain", "answer": "Brood" },
             { "question": "Eau", "answer": "Water" },
             { "question": "Lait", "answer": "Melk" },
@@ -92,7 +92,7 @@
         {
           "id": "colors",
           "name": "Colors",
-          "questions": [
+          "words": [
             { "question": "Rouge", "answer": "Rood" },
             { "question": "Bleu", "answer": "Blauw" },
             { "question": "Vert", "answer": "Groen" },

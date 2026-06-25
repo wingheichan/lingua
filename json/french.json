@@ -3,12 +3,12 @@
   "flag": "🇫🇷",
   "categories": [
     {
-      "id": "formidable",
-      "name": "Formidable",
+      "id": "basics",
+      "name": "Basics",
       "subcategories": [
         {
-          "id": "marche19",
-          "name": "Marche19",
+          "id": "greetings",
+          "name": "Greetings",
           "words": [
             { "question": "je bricole", "answer": "ik knutsel"},
             { "question": "bricoler", "answer": "knutselen"},
@@ -38,8 +38,8 @@
           ]
         },
         {
-          "id": "marche20",
-          "name": "Marche20",
+          "id": "numbers",
+          "name": "Numbers",
           "words": [
             { "question": "je dors", "answer": "ik slaap"},
             { "question": "dormir", "answer": "slapen"},

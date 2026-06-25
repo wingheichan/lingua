@@ -8,7 +8,7 @@
 const FillGame = (() => {
 
   const WORD_TARGET  = 20;
-  const MAX_SECONDS  = 60;
+  const MAX_SECONDS  = 120;
   const PTS_CORRECT  = 10;
   const PTS_BONUS_PER_SEC = 5;
 

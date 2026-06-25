@@ -10,14 +10,24 @@
           "id": "greetings",
           "name": "Greetings",
           "sentences": [
-            { "sentence": "Bonjour, comment ___ vous?", "answer": "allez", "hint": "Goedendag, hoe ___ het met u?", "translation": "gaat" },
-            { "sentence": "Je ___ bien, merci.", "answer": "vais", "hint": "Het ___ goed met mij, dank u.", "translation": "gaat" },
-            { "sentence": "Enchanté de faire votre ___.", "answer": "connaissance", "hint": "Aangenaam ___ te maken.", "translation": "kennis" },
-            { "sentence": "À ___ demain!", "answer": "bientôt", "hint": "Tot ___ morgen!", "translation": "snel/ziens" },
-            { "sentence": "Bonne ___ à vous!", "answer": "journée", "hint": "Goede ___ aan u!", "translation": "dag" },
-            { "sentence": "Je suis ___ de te voir.", "answer": "content", "hint": "Ik ben ___ je te zien.", "translation": "blij" },
-            { "sentence": "D'où ___ vous?", "answer": "venez", "hint": "Waar ___ u vandaan?", "translation": "komt" },
-            { "sentence": "J'___ de Hollande.", "answer": "viens", "hint": "Ik ___ uit Holland.", "translation": "kom" }
+            { "sentence": "Je ___ ___ ___ atelier.", "answer": "bricole dans mon", "hint": "Ik ___ ___ ___ atelier", "translation": "knutsel in mijn" },
+            { "sentence": "On ___ ___ ___ au marché.", "answer": "achète des légumes", "hint": "Men ___ ___ op de markt", "translation": "koopt groenten" },
+            { "sentence": "On ___ ___ ___ ___ cinq", "answer": "continue à la page", "hint": "We ___ ___ ___ ___ vijf", "translation": "gaan door op pagina" },
+            { "sentence": "Vous ___ ___?", "answer": "voyagez beaucoup", "hint": "___ u ___?", "translation": "Reist u veel?" },
+            { "sentence": "Arrête, ___ ___ ___", "answer": "tu bouges trop", "hint": "Hou op,___ ___ ___ ___ ", "translation": "je beweegt te veel" },
+            { "sentence": "Le ___ ___ ___ ___", "answer": "symbole de la paix", "hint": "het ___", "translation": "vredesteken" },
+            { "sentence": "___ un livre", "answer": "lire", "hint": "een boek ___ ", "translation": "lezen" },
+            { "sentence": "Le ___ ___ ___", "answer": "maître de l'école", "hint": "De ___ ", "translation": "schoolmeester" },
+            { "sentence": "Le ___ ___ ___ chien", "answer": "maître appele son", "hint": "Het ___ ___ ___ hond", "translation": "baasje roept zijn" },
+            { "sentence": "Un ___ ___ ", "answer": "dîner d'anniversaire", "hint": "een ___", "translation": "verjaardagsdiner" },
+            { "sentence": "J'ai  difficile", "answer": "fait un choix", "hint": "Ik heb ___ moeilijke ___ ___", "translation": "een moeilijke keus gemaakt" },
+            { "sentence": "___ ___ un film génial", "answer": "C'était", "hint": "___ ___ een geniale film", "translation": "het was" },
+            { "sentence": "___ ___ réputation", "answer": "une mauvaise", "hint": "___ ___ reputatie ", "translation": "een slechte" },
+            { "sentence": "___ ___ chambre", "answer": "ma propre", "hint": "___ ___ kamer", "translation": "mijn eigen" },
+            { "sentence": "___ tu risques de...", "answer": "sinon", "hint": "___ ___ dan loop je het risico dat...", "translation": "zo niet" },
+            { "sentence": "___ ___ il fait beau", "answer": "dès demain", "hint": "___ ___ is het mooi weer", "translation": "vanaf morgen" },
+            { "sentence": "Tout le monde est là, ___ ___", "answer": "sauf Paul", "hint": "Iedereen is er, behalve Paul.", "translation": "behalve Paul" },
+            { "sentence": "___ ___pénibles", "answer": "les devoirs", "hint": "___ lastige ___", "translation": "het lastige huiswerk" }
           ]
         },
         {

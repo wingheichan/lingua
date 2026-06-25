@@ -1,12 +1,12 @@
 // ============================================================
 //  LINGUA QUEST - Memory Card Game
-//  - 60-second countdown timer
+//  - 120-second countdown timer
 //  - +5 bonus per second remaining on finish
 // ============================================================
 
 const MemoryGame = (() => {
 
-  const MAX_SECONDS       = 60;
+  const MAX_SECONDS       = 120;
   const PTS_MATCH         = 20;
   const PTS_MISTAKE       = -5;
   const PTS_BONUS_PER_SEC = 5;

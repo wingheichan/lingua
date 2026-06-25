@@ -7,7 +7,7 @@
 
 const QuizGame = (() => {
 
-  const MAX_SECONDS       = 60;
+  const MAX_SECONDS       = 120;
   const MAX_LIVES         = 3;
   const PTS_CORRECT       = 20;
   const PTS_BONUS_PER_SEC = 5;

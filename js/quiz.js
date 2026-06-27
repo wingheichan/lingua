@@ -31,6 +31,18 @@ const QuizGame = (() => {
 
   const $ = id => document.getElementById(id);
 
+  // ── Delegated event handlers (attached to container, survive innerHTML swap) ──
+  function _containerClick(e) {
+    if (e.target && (e.target.id === 'quiz-submit' || e.target.closest('#quiz-submit'))) {
+      checkAnswer();
+    }
+  }
+  function _containerKeydown(e) {
+    if (e.key === 'Enter' && e.target && e.target.id === 'quiz-input') {
+      checkAnswer();
+    }
+  }
+
   // ── Start ──────────────────────────────────────────────────
   function start() {
     const sub = App.state.selectedSubcategory;
@@ -44,11 +56,17 @@ const QuizGame = (() => {
     monsterIdx   = 0;
     humanIdx     = 0;
 
-    $('quiz-quit').onclick   = () => App.quitGame();
-    $('quiz-submit').onclick = () => checkAnswer();
-    $('quiz-input').addEventListener('keydown', e => {
-      if (e.key === 'Enter') checkAnswer();
-    });
+    // quiz-quit lives outside quiz-container so always safe
+    const quitBtn = $('quiz-quit');
+    if (quitBtn) quitBtn.onclick = () => App.quitGame();
+
+    // quiz-submit and quiz-input live inside quiz-container (rebuilt after reset)
+    // bind via the container so they work even after innerHTML is restored
+    const container = $('quiz-container');
+    if (container) {
+      container.addEventListener('click', _containerClick);
+      container.addEventListener('keydown', _containerKeydown);
+    }
 
     setCharacter('quiz-monster', MONSTERS[0]);
     setCharacter('quiz-human',   HUMANS[0]);
@@ -571,7 +589,11 @@ const QuizGame = (() => {
     if (house) { house.style.cssText = ''; }
 
     const c = $('quiz-container');
-    if (c && !$('quiz-q-text')) c.innerHTML = quizOriginalHTML;
+    if (c) {
+      c.removeEventListener('click', _containerClick);
+      c.removeEventListener('keydown', _containerKeydown);
+      if (!$('quiz-q-text')) c.innerHTML = quizOriginalHTML;
+    }
   }
 
   function shuffle(arr) {
